@@ -194,11 +194,13 @@ lewis:
 assignment to variable within function
 return as an int/float
 we maybe pass a struct with form:
+
 '''
   struct num:
     float value;
     bool int;
 '''
+
 with int as true when the number is an int
 
 
@@ -208,7 +210,9 @@ _9 is printed_
 
 one <- 1
 function increment value
+
 	return value + one
+
 print increment(3) + increment(4)
 
 ### take away
