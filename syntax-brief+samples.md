@@ -193,6 +193,7 @@ print multiply(10, 5)
 lewis:
 assignment to variable within function
 return as an int/float
+<<<<<<< HEAD
 we maybe pass a struct with form:
 
 '''
@@ -202,6 +203,8 @@ we maybe pass a struct with form:
 '''
 
 with int as true when the number is an int
+=======
+>>>>>>> e208128 (added cases.md for us to write our most complex)
 
 
 ## EXAMPLE 8
