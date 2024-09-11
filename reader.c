@@ -4,38 +4,64 @@
 #include <string.h>
 #include <ctype.h>
 
+typedef enum {
+    TOKEN_IDENTIFIER,
+    TOKEN_NUMBER,
+    TOKEN_ASSIGN,
+    TOKEN_OPERATOR,
+    TOKEN_PRINT,
+    TOKEN_FUNCTION,
+    TOKEN_RETURN,
+    TOKEN_LPAREN,
+    TOKEN_RPAREN,
+    TOKEN_COMMA,
+    TOKEN_END
+} TokenType;
+
+
+
+
+
+
+
 int reader(char[]);
 bool decomment(char[]);
-int parse(char[]);
+void parse(char[]);
+/*
 void functiondef(char[]);
 void printout(char[]);
 void assign(char []);
+*/
 
 
 
-static FILE* in_fp;
-static FILE* out_fp;
+
+
 
 
 int main(int argc, char *argv[])
 {
-    //currently will take 1 command line argument, will expect a filename
+    /*currently will take 1 command line argument, will expect a filename
     if (argc != 2) 
     {
         printf("Usage of %s: %s takes 1 command line argument.", argv[0], argv[0]);
         exit(EXIT_FAILURE);
     }
+    */
+    // change to argv[1] when we are ready to come together
     
-    in_fp = fopen(argv[1], "r");
-    out_fp = fopen("source.c", "w");
+        //error
+    // out_fp = fopen("source.c", "w");
     //  pass filename to a reader function
-    reader(argv[1]);
+    reader("program.ml");
 }
 
 
 //do we want to make our reader read and process line by line
 // take a line and perform a translation on that line?
 // if so, do we write to a c source file and compile that?
+
+// I think using tokenisation for this is better
 
 int reader(char file[]) 
 {
@@ -44,8 +70,9 @@ int reader(char file[])
     int count = 0;
 
     // declare an input file pointer for the file declared in argument
-    FILE *fptr = fopen(file, "r");
+    FILE *fptr = fopen("program.ml", "r");
     // while a line != null, read a line and perform an operation
+    printf("test");
     while (fgets(line, sizeof(line), fptr) != NULL) 
     {
         // if comment, will evaluate false
@@ -55,6 +82,7 @@ int reader(char file[])
             parse(line);
         }
     }
+    fclose(fptr);
 }
 
 
@@ -64,30 +92,31 @@ bool decomment(char line[])
     return (line[0] != '#');
 }
 
-int parse(char line[]) 
-{
-    // find a string within a substring
-    // looking for a single word in the array
-    // return statements will only be inside a function def
-    // anything else can be assumed to be an assignment??
+void parse(char line[]) 
+{   
+    //declaring our "seperator" and an array for our token to go to
+    char delimiter[] = " ";
+    char* token;
+    char* expression;
 
-    // I dont like this method
-    
-    if (strstr(line, "function ") != NULL) 
-    {
-        functiondef(line);
+    //testing bullshit ignore
+    printf("\ninitial string:\n%s\n", line);
+    printf("after tokenisation: \n");
+
+    // get first token from the string
+    token = strtok(line, delimiter);
+
+    // if the string is finished strtok will return NULL
+    // we check here that token is not null and loop until finished
+    while (token) {
+        printf("%s\n", token);
+        // calling strtok subsqeuently will just use NULL for the string argument
+        token = strtok(NULL, delimiter);
     }
-    else if (strstr(line, "print ") != NULL) 
-    {
-        printout(line);
-    }
-    else 
-    {
-        assign(line);
-    }
-    return 0;
 }
 
+
+/*
 
 void functiondef(char line[]) {
     ;
@@ -120,3 +149,5 @@ void assign(char line[])
         fputs(var, out_fp);
     }
 }
+
+*/
