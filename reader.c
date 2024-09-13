@@ -105,7 +105,7 @@ void parse(char line[])
 
     // get first token from the string
     token = strtok(line, delimiter);
-
+    identify(token);
     // if the string is finished strtok will return NULL
     // we check here that token is not null and loop until finished
     while (token) {
@@ -114,6 +114,10 @@ void parse(char line[])
         token = strtok(NULL, delimiter);
     }
 }
+
+
+
+
 
 
 /*
