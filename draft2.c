@@ -8,7 +8,8 @@
 #define MAX_TOKEN_VALUE 100
 
 typedef enum {
-    TOKEN_NUMBER,
+    TOKEN_INT,
+    TOKEN_FLOAT,
     TOKEN_IDENTIFIER,
     TOKEN_ASSIGNMENT,
     TOKEN_OPERATOR,
@@ -51,6 +52,9 @@ void get_line_tokens(char *line, Token *tokens, int *token_count) {
         (*token_count)++;
     }
     tokens[*token_count] = token;
+    *token_count++;
+    Token end = {TOKEN_END, "end"};
+    tokens[*token_count] = end;
 }
 
 
@@ -136,7 +140,15 @@ Token get_next_token(char* line, int* pos) {
         // copy the value as a string to the token.value
         strncpy(token.value, &line[start], *pos - start);
         token.value[*pos - start] = '\0';
-        token.type = TOKEN_NUMBER;
+        for (int i = 0; i < (*pos - start); i++) {
+            if (token.value[i] == '.') {
+                token.type = TOKEN_FLOAT;
+                break;
+            }
+            else {
+                token.type = TOKEN_INT;
+            }
+        }
     } 
 
     // check now for assignment: if the less than char is found check
@@ -197,7 +209,8 @@ const char* token_type_to_string(TokenType type) {
     
     switch (type) {
         case TOKEN_IDENTIFIER: return "TOKEN_IDENTIFIER";
-        case TOKEN_NUMBER: return "TOKEN_NUMBER";
+        case TOKEN_INT: return "TOKEN_INT";
+        case TOKEN_FLOAT: return "TOKEN_FLOAT";
         case TOKEN_ASSIGNMENT: return "TOKEN_ASSIGN";
         case TOKEN_OPERATOR: return "TOKEN_OPERATOR";
         case TOKEN_PRINT: return "TOKEN_PRINT";
@@ -220,38 +233,37 @@ void print_tokens(Token * tokens, int token_count) {
 }
 void build_fheader(Token * tokens);
 void build_fbody(Token * tokens);
-void build_print(Token * tokens);
+void build_print(Token * tokens, int length);
 
-void parse_tokens(Token * tokens, int *build_state, int token_count) {
+void parse_tokens(Token * tokens, FILE* fout, int token_count) {
     int pos = 0;
     while (pos < token_count) {
         switch (tokens[0].type) {
             case TOKEN_FUNCTION: {
                 build_fheader(&tokens[pos]);
-                (*build_state) = BUILDING_FUNCTION;
                 pos++;
                 break;
             }
             // case TOKEN_INDENT: {
             //     build_fbody(&tokens[pos]);
-            //     build_state = BUILDING_BODY;
+            //     (*build_state) = BUILDING_BODY;
             //     pos++;
             //     break;
             // }
-            // case TOKEN_PRINT: {
-            //     build_print(&tokens[pos]);
-            //     build_state = BUILDING_PRINT;
-            //     pos++;
-            //     break;
-            // }
+            case TOKEN_PRINT: {
+                build_print(tokens, fout, token_count);
+                break;
+            }
         }
     }
 }
 
 
 void build_fheader (Token * tokens) {
+    // fputs
+    
     printf("void %s(", tokens[1].value);
-    int i = 2; 
+    int i = 1; // not sure if it should be one??
     while (tokens[i].type != TOKEN_INDENT) { //because we will not come across an assignment in the header its just easier to do it like this so we can increment
         if (tokens[i].type == TOKEN_IDENTIFIER){
             i +=1;
@@ -265,11 +277,21 @@ void build_fheader (Token * tokens) {
     printf(") {\n");
 }
 
-
+void build_print(Token *tokens, FILE* fout, int length) {
+    int i = 1;
+    fputs("double printout =", fout);
+    for (i; i < length; i++) {
+        fputs(" ", fout);
+        fputs(tokens[i].value, fout);
+    }
+    fputs(";", fout);
+    char printing[] = "if ((printout - (int)printout) == 0) {printf(\"%d\", (int)printout);} else {printf(\"%lf\", printout);}";
+    fputs(printing, fout);
+}
 
 int main(void) {
     // filename added for testing (mod when you want to change sources)
-    char filename[] = "program.ml";
+    char filename[] = "program1.ml";
     // buffer for the line to sit in while we play with it
     char line[BUFSIZ];
     // counter for the number of tokens per line
@@ -278,6 +300,7 @@ int main(void) {
     Token *tokens = malloc(MAX_TOKENS * sizeof(Token));
     // file pointer to our file in read mode
     FILE* infile = fopen(filename, "r");
+    FILE* fout = fopen("out.c", "w");
 
     // grab a line from our file
     while (fgets(line, sizeof(line), infile) != NULL) {
@@ -294,11 +317,13 @@ int main(void) {
         // just printing all the tokens
         print_tokens(tokens, token_count);
         
-        BuildState build = INITIAL;
-        parse_tokens(tokens, &build, token_count);
+        BuildState* build = INITIAL;
+        //parse_tokens(tokens, fout, token_count);
         
         token_count = 0;
     }
+
+    print_tokens(tokens, token_count);
 
     // we are legendary programmers BRO
     free(tokens);

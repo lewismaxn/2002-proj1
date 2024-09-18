@@ -217,6 +217,8 @@ int main(void) {
     // file pointer to our file in read mode
     FILE* infile = fopen(filename, "r");
 
+    Token end = {TOKEN_END, "end"};
+
     // grab a line from our file
     while (fgets(line, sizeof(line), infile) != NULL) {
         // this is for debugging (showing the origional line string)
@@ -226,16 +228,15 @@ int main(void) {
             // get all the tokens from the line
             // the tokens will put in the tokens array
             get_line_tokens(line, tokens, &token_count);
+            tokens[token_count++] = end;
         }
         // DEBUGGING
         // just printing all the tokens
-        for (int i = 0; i < token_count; i++) {
-            printf("Token Type: %-20s Token Value: %s\n", token_type_to_string(tokens[i].type), tokens[i].value);
-        }
-        printf("\n\n");
-        token_count = 0;
     }
 
+    for (int i = 0; i < token_count; i++) {
+            printf("Token Type: %-20s Token Value: %s\n", token_type_to_string(tokens[i].type), tokens[i].value);
+        }
     // we are legendary programmers BRO
     free(tokens);
 }

@@ -27,6 +27,7 @@ function multiply a b
 	return a * b
 print multiply(12, 6)
 
+
 #ex.7
 function multiply a b
 	x <- a * b
@@ -41,7 +42,7 @@ print increment(3) + increment(4)
 
 
 
-function cum abc b
+function random a b
 	a <- 6.7
 	b <- 7.4
 	c <- a + b
