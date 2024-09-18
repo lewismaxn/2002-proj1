@@ -38,6 +38,7 @@ typedef struct {
 
 
 Token get_next_token(char *line, int *pos);
+
 const char* token_type_to_string(TokenType type);
 
 
@@ -111,7 +112,6 @@ Token get_next_token(char* line, int* pos) {
         token.value[*pos - start] = '\0';
 
         // check for a keyword first
-
         if (strcmp(token.value, "print") == 0)
             token.type = TOKEN_PRINT;
         else if (strcmp(token.value, "function") == 0)
@@ -123,7 +123,14 @@ Token get_next_token(char* line, int* pos) {
         else
             // check for conditions of an identifier - 12 lowercase letters
             if (*pos - start > 12) {
-            fprintf(stderr, "! Error: Identifiers must be 12 alphanumeric characters \n");
+            
+            // VELJKO
+
+            // return error to stderr
+
+            //ERROR CHECK HERE
+
+            printf("Identifiers must be 12 alphanumeric characters");
             }
             else {
                 token.type = TOKEN_IDENTIFIER;
@@ -297,7 +304,8 @@ int main(void) {
     // counter for the number of tokens per line
     int token_count = 0;
     // allocating some memory for our tokens to sit in
-    Token *tokens = malloc(MAX_TOKENS * sizeof(Token));
+    // define pointer to this block
+    Token* tokens = malloc(MAX_TOKENS * sizeof(Token));
     // file pointer to our file in read mode
     FILE* infile = fopen(filename, "r");
     FILE* fout = fopen("out.c", "w");
@@ -310,6 +318,7 @@ int main(void) {
         if (not_comment(line)) {
             // get all the tokens from the line
             // the tokens will put in the tokens array
+
             get_line_tokens(line, tokens, &token_count);
         }
 
@@ -317,11 +326,11 @@ int main(void) {
         // just printing all the tokens
         print_tokens(tokens, token_count);
         
-        BuildState* build = INITIAL;
-        //parse_tokens(tokens, fout, token_count);
-        
-        token_count = 0;
+        // BuildState* build = INITIAL;
+        // //parse_tokens(tokens, fout, token_count);
     }
+
+    print_tokens(tokens, token_count);
 
     print_tokens(tokens, token_count);
 

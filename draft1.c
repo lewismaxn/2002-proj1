@@ -230,6 +230,7 @@ int main(void) {
             get_line_tokens(line, tokens, &token_count);
             tokens[token_count++] = end;
         }
+
         // DEBUGGING
         // just printing all the tokens
     }
