@@ -22,6 +22,14 @@ typedef enum {
     TOKEN_INDENT
 } TokenType;
 
+typedef enum {
+    INITIAL,
+    BUILDING_PRINT,
+    BUILDING_FUNCTION,
+    BUILDING_BODY,
+} BuildState;
+
+
 typedef struct {
     TokenType type;
     char value[MAX_TOKEN_VALUE];
@@ -205,6 +213,30 @@ const char* token_type_to_string(TokenType type) {
     }
 }
 
+void print_tokens(Token * tokens, int token_count) {
+    for (int i = 0; i < token_count; i++) {
+            printf("Token Type: %-20s Token Value: %s\n", token_type_to_string(tokens[i].type), tokens[i].value);
+        }
+        printf("\n\n");
+}
+
+void parse_tokens(Token * tokens, int *build_state, int token_count) {
+    switch (tokens[0].type) {
+        case TOKEN_FUNCTION: {
+            build_fheader(tokens);
+            build_state = BUILDING_FUNCTION;
+        }
+        case TOKEN_INDENT: {
+            build_fbody(tokens);
+            build_state = BUILDING_BODY;
+        case TOKEN_PRINT: {
+            build_print(tokens);
+            build_state = BUILDING_PRINT;
+        }
+    }
+}
+
+
 int main(void) {
     // filename added for testing (mod when you want to change sources)
     char filename[] = "program.ml";
@@ -227,12 +259,14 @@ int main(void) {
             // the tokens will put in the tokens array
             get_line_tokens(line, tokens, &token_count);
         }
+
         // DEBUGGING
         // just printing all the tokens
-        for (int i = 0; i < token_count; i++) {
-            printf("Token Type: %-20s Token Value: %s\n", token_type_to_string(tokens[i].type), tokens[i].value);
-        }
-        printf("\n\n");
+        print_tokens(tokens, token_count);
+        
+        BuildState build = INITIAL;
+        parse_tokens(tokens, &build, token_count);
+        
         token_count = 0;
     }
 

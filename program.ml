@@ -38,3 +38,11 @@ one <- 1
 function increment value
 	return value + one
 print increment(3) + increment(4)
+
+
+
+function cum abc b
+	a <- 6.7
+	b <- 7.4
+	c <- a + b
+	print c
