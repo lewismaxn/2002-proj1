@@ -53,7 +53,7 @@ void get_line_tokens(char *line, Token *tokens, int *token_count) {
         (*token_count)++;
     }
     tokens[*token_count] = token;
-    *token_count++;
+    (*token_count)++;
     Token end = {TOKEN_END, "end"};
     tokens[*token_count] = end;
 }
@@ -123,14 +123,8 @@ Token get_next_token(char* line, int* pos) {
         else
             // check for conditions of an identifier - 12 lowercase letters
             if (*pos - start > 12) {
-            
-            // VELJKO
-
-            // return error to stderr
-
-            //ERROR CHECK HERE
-
-            printf("Identifiers must be 12 alphanumeric characters");
+            printf(stderr, "Error: Identifiers must be 12 alphanumeric characters");
+            exit(EXIT_FAILURE);
             }
             else {
                 token.type = TOKEN_IDENTIFIER;
@@ -238,16 +232,16 @@ void print_tokens(Token * tokens, int token_count) {
         }
         printf("\n\n");
 }
-void build_fheader(Token * tokens);
-void build_fbody(Token * tokens);
-void build_print(Token * tokens, int length);
+
+// void build_fheader(Token *tokens, FILE *fout, int length) {}
+// void build_print(Token *tokens, FILE *fout, int length) {}
 
 void parse_tokens(Token * tokens, FILE* fout, int token_count) {
     int pos = 0;
     while (pos < token_count) {
         switch (tokens[0].type) {
             case TOKEN_FUNCTION: {
-                build_fheader(&tokens[pos]);
+                build_fheader(tokens, fout, token_count);
                 pos++;
                 break;
             }
@@ -266,22 +260,39 @@ void parse_tokens(Token * tokens, FILE* fout, int token_count) {
 }
 
 
-void build_fheader (Token * tokens) {
-    // fputs
-    
-    printf("void %s(", tokens[1].value);
-    int i = 1; // not sure if it should be one??
-    while (tokens[i].type != TOKEN_INDENT) { //because we will not come across an assignment in the header its just easier to do it like this so we can increment
+void build_fheader (Token *tokens, FILE* fout, int length) {
+    //before we start writing the header need to check if its a return function or not
+    bool returnornot = false;
+    int i = 0;
+    for (i = 0; i < length; i++){
+        if (tokens[i].type == TOKEN_RETURN) {
+            returnornot = true;
+        }
+    }
+    if (returnornot) {
+        fputs("double ", fout); 
+    }
+    else{
+        fputs("void ",fout);
+    }
+    fputs(tokens[1].value, fout);
+    fputs("(", fout);
+    i = 2;
+    bool first = true; //gonna use this later to check if the parameter is a first parameter or not
+    //bcause if theres multiple we need to add commas for the c code header
+    while (tokens[i].type != TOKEN_INDENT && i < length){
         if (tokens[i].type == TOKEN_IDENTIFIER){
-            i +=1;
-            printf("int %s", tokens[i].value); 
-            if (tokens[i].type == TOKEN_COMMA) {
-                printf(",");
+            if (!first) {
+                fputs(", ", fout);
             }
+            fputs("double ", fout);
+            fputs(tokens[i].value, fout);
+            first=false;
         }
         i++;
     }
-    printf(") {\n");
+    fputs(") {\n", fout);
+
 }
 
 void build_print(Token *tokens, FILE* fout, int length) {
@@ -294,11 +305,15 @@ void build_print(Token *tokens, FILE* fout, int length) {
     fputs(";", fout);
     char printing[] = "if ((printout - (int)printout) == 0) {printf(\"%d\", (int)printout);} else {printf(\"%lf\", printout);}";
     fputs(printing, fout);
+
+    i = 2;
+    while (tokens[i].type !=TOKEN_INDENT && i < length)
+    break;
 }
 
 int main(void) {
     // filename added for testing (mod when you want to change sources)
-    char filename[] = "program1.ml";
+    char filename[] = "program.ml";
     // buffer for the line to sit in while we play with it
     char line[BUFSIZ];
     // counter for the number of tokens per line
@@ -327,7 +342,7 @@ int main(void) {
         print_tokens(tokens, token_count);
         
         // BuildState* build = INITIAL;
-        // //parse_tokens(tokens, fout, token_count);
+        // parse_tokens(tokens, fout, token_count);
     }
 
     print_tokens(tokens, token_count);
