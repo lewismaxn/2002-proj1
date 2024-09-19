@@ -119,10 +119,7 @@ Token get_next_token(char* line, int* pos) {
         else
             // check for conditions of an identifier - 12 lowercase letters
             if (*pos - start > 12) {
-            
-            //ERROR CHECK HERE
-
-            printf("Identifiers must be 12 alphanumeric characters");
+            fprintf(stderr, "! Error: Identifiers must be 12 alphanumeric characters \n");
             }
             else {
                 token.type = TOKEN_IDENTIFIER;
@@ -219,23 +216,51 @@ void print_tokens(Token * tokens, int token_count) {
         }
         printf("\n\n");
 }
+void build_fheader(Token * tokens);
+void build_fbody(Token * tokens);
+void build_print(Token * tokens);
 
 void parse_tokens(Token * tokens, int *build_state, int token_count) {
-    switch (tokens[0].type) {
-        case TOKEN_FUNCTION: {
-            build_fheader(tokens);
-            build_state = BUILDING_FUNCTION;
-        }
-        case TOKEN_INDENT: {
-            build_fbody(tokens);
-            build_state = BUILDING_BODY;
-        case TOKEN_PRINT: {
-            build_print(tokens);
-            build_state = BUILDING_PRINT;
+    int pos = 0;
+    while (pos < token_count) {
+        switch (tokens[0].type) {
+            case TOKEN_FUNCTION: {
+                build_fheader(&tokens[pos]);
+                build_state = BUILDING_FUNCTION;
+                pos++;
+                break;
+            }
+            case TOKEN_INDENT: {
+                build_fbody(&tokens[pos]);
+                build_state = BUILDING_BODY;
+                pos++;
+                break;
+            }
+            case TOKEN_PRINT: {
+                build_print(&tokens[pos]);
+                build_state = BUILDING_PRINT;
+                pos++;
+                break;
+            }
         }
     }
 }
 
+void build_fheader (Token * tokens) {
+    printf("void %s(", tokens[1].value);
+    int i = 1; // not sure if it should be one??
+    while (tokens[i].type != TOKEN_ASSIGNMENT) { //because we will not come across an assignment in the header its just easier to do it like this so we can increment
+        if (tokens[i].type == TOKEN_IDENTIFIER){
+            i +=1;
+            printf("int %s", tokens[i].value); 
+            if (tokens[i].type == TOKEN_COMMA) {
+                printf(",");
+            }
+        }
+        i++;
+    }
+    printf(") {\n");
+}
 
 int main(void) {
     // filename added for testing (mod when you want to change sources)
