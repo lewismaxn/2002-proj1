@@ -240,7 +240,7 @@ void print_tokens(Token * tokens, int token_count) {
 }
 void build_fheader(Token * tokens);
 void build_fbody(Token * tokens);
-void build_print(Token * tokens, int length);
+void build_print(Token * tokens, FILE* fout, int length);
 
 void parse_tokens(Token * tokens, FILE* fout, int token_count) {
     int pos = 0;
