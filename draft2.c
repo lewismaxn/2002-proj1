@@ -226,30 +226,31 @@ void parse_tokens(Token * tokens, int *build_state, int token_count) {
         switch (tokens[0].type) {
             case TOKEN_FUNCTION: {
                 build_fheader(&tokens[pos]);
-                build_state = BUILDING_FUNCTION;
+                (*build_state) = BUILDING_FUNCTION;
                 pos++;
                 break;
             }
-            case TOKEN_INDENT: {
-                build_fbody(&tokens[pos]);
-                build_state = BUILDING_BODY;
-                pos++;
-                break;
-            }
-            case TOKEN_PRINT: {
-                build_print(&tokens[pos]);
-                build_state = BUILDING_PRINT;
-                pos++;
-                break;
-            }
+            // case TOKEN_INDENT: {
+            //     build_fbody(&tokens[pos]);
+            //     build_state = BUILDING_BODY;
+            //     pos++;
+            //     break;
+            // }
+            // case TOKEN_PRINT: {
+            //     build_print(&tokens[pos]);
+            //     build_state = BUILDING_PRINT;
+            //     pos++;
+            //     break;
+            // }
         }
     }
 }
 
+
 void build_fheader (Token * tokens) {
     printf("void %s(", tokens[1].value);
-    int i = 1; // not sure if it should be one??
-    while (tokens[i].type != TOKEN_ASSIGNMENT) { //because we will not come across an assignment in the header its just easier to do it like this so we can increment
+    int i = 2; 
+    while (tokens[i].type != TOKEN_INDENT) { //because we will not come across an assignment in the header its just easier to do it like this so we can increment
         if (tokens[i].type == TOKEN_IDENTIFIER){
             i +=1;
             printf("int %s", tokens[i].value); 
@@ -261,6 +262,8 @@ void build_fheader (Token * tokens) {
     }
     printf(") {\n");
 }
+
+
 
 int main(void) {
     // filename added for testing (mod when you want to change sources)
