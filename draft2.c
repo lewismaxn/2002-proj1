@@ -126,6 +126,8 @@ Token get_next_token(char* line, int* pos) {
             }
     } 
 
+    //hello
+
     // check for a digit 
     else if (isdigit(line[*pos])) {  // Numbers
         int start = *pos;
