@@ -245,8 +245,48 @@ void print_tokens(Token * tokens, int token_count) {
         printf("\n\n");
 }
 
+void build_fheader(Token * tokens, FunctionType type, int *pos, FILE *fout);
 void build_fbody(Token * tokens);
-void build_print(Token * tokens, FILE* fout, int length);
+void build_print(Token * tokens, FILE* fout, int * pos);
+const FunctionType check_function_type(Token * tokens, int * pos);
+
+void parse_tokens(Token * tokens, FILE* fout, int token_count) {
+    // declaring a variable for our function type:
+        // defines if the funtion being parsed will return a value or not
+    FunctionType f_type;
+    // a marker for our position in the token array
+    int pos = 0;
+    // check the token type at the position in the array
+    while (pos < token_count) {
+        // check for function, assignment or print
+        switch (tokens[pos].type) {
+            case TOKEN_END: {
+                pos++;
+            }
+            case TOKEN_FUNCTION: {
+                f_type = check_function_type(tokens, &pos);
+                pos++;
+                build_fheader(tokens, f_type, &pos, fout);
+                break;
+            }
+            case TOKEN_INDENT: {
+                build_body(tokens, &pos);
+            }
+            case TOKEN_IDENTIFIER: {
+                build_assignment(tokens, &pos, fout);
+                break;
+            }
+            case TOKEN_PRINT: {
+                pos++;
+                build_print(tokens, fout, &pos);
+                break;
+            }
+            default: {
+                break;
+            }
+        }
+    }
+}
 
 const FunctionType check_function_type(Token *tokens, int *pos) {
     // defining an int for the position in the array
@@ -264,89 +304,72 @@ const FunctionType check_function_type(Token *tokens, int *pos) {
     return VOID;
 }
 
-void parse_tokens(Token * tokens, FILE* fout, int token_count, int line_count) {
-    FunctionType f_type;
-    int pos = 0;
-    while (pos < token_count) {
-        switch (tokens[pos].type) {
-            case TOKEN_FUNCTION: {
-                f_type = check_function_type(tokens, &pos);
-                pos++;
-                build_fheader(tokens, f_type, &pos, fout);
-                break;
-            }
-            // case TOKEN_INDENT: {
-            //     build_fbody(&tokens[pos]);
-            //     (*build_state) = BUILDING_BODY;
-            //     pos++;
-            //     break;
-            // }
-            case TOKEN_PRINT: {
-                build_print(tokens, fout, token_count);
-                break;
-            }
-        }
-    }
-}
-
-
-
 void build_fheader(Token * tokens, FunctionType f_type, int *pos, FILE* fout) {
     if (tokens[*pos].type != TOKEN_IDENTIFIER) {
         fprintf(stderr, "!Trying to define function without an identifier");
+        // i want this to scan through the funtion until the last line of body and
+        // just skip it all
+
+        // break out of the loop when we dont find an indent
         while (true) {
             if (tokens[*pos].type == TOKEN_END && tokens[*pos+1].type != TOKEN_INDENT) {
-            *pos++;
+            (*pos)++;
             return;
             }
-            *pos++;
+            (*pos)++;
         }
     }
     if (f_type == VOID) {
         fprintf(fout, "void ");
-        fprintf(fout, tokens[*pos].value);
+        fprintf(fout, "%s", tokens[(*pos)].value);
         fprintf(fout, "(double ");
         while (tokens[*pos].type != TOKEN_INDENT) {
             fprintf(fout, ", double ");
-            fprintf(fout, tokens[*pos].value);
+            fprintf(fout, "%s", tokens[*pos].value);
         }
         fprintf(fout, ") {\n");
     }
     if (f_type == NUM) {
         fprintf(fout, "double ");
-        fprintf(fout, tokens[*pos].value);
+        fprintf(fout, "%s", tokens[*pos].value);
         fprintf(fout, "(double ");
         while (tokens[*pos].type != TOKEN_INDENT) {
             fprintf(fout, ", double ");
-            fprintf(fout, tokens[*pos].value);
+            fprintf(fout, "%s", tokens[*pos].value);
         }
         fprintf(fout, ") {\n");
     }
 }
 
-void build_print(Token *tokens, FILE* fout, int length) {
-    int i = 1;
+void build_assignment(Token * tokens, int *pos, FILE* fout) {
+    if (tokens[*pos+1].type == TOKEN_ASSIGNMENT) {
+        fprintf(fout, "double ");
+        fprintf(fout, "%s", tokens[*pos].value);
+        fprintf(fout, " = ");
+        // skipping over the assignment and identifier char
+        *pos += 2;
+        while (tokens[pos].type != TOKEN_END) {
+            fprintf(fout, "%s", tokens[*pos].value)
+            *pos++;
+        }
+    }
+}
+
+void build_print(Token *tokens, FILE* fout, int * pos) {
     fputs("double printout =", fout);
-    for (i; i < length; i++) {
+    while (tokens[*pos].type != TOKEN_END) {
         fputs(" ", fout);
-        fputs(tokens[i].value, fout);
+        fputs(tokens[*pos].value, fout);
+        *pos += 1;
     }
     fputs(";", fout);
-    char printing[] = "if ((printout - (int)printout) == 0) {printf(\"%d\", (int)printout);} else {printf(\"%lf\", printout);}";
+    char printing[] = "if ((printout - (int)printout) == 0) {\nprintf(\"%d\", (int)printout);\n}\nelse {\nprintf(\"%lf\", printout);\n}";
     fputs(printing, fout);
-}
-
-void compiler() {
-    system ("cc -std=c11 -o out out.c");
-}
-
-void execution() {
-    system("./out");
 }
 
 int main(void) {
     // filename added for testing (mod when you want to change sources)
-    char filename[] = "program.ml";
+    char filename[] = "program1.ml";
     // buffer for the line to sit in while we play with it
     char line[BUFSIZ];
     // counter for the number of tokens per line
@@ -377,11 +400,8 @@ int main(void) {
 
     print_tokens(tokens, token_count);
 
-    compiler();
-
-    execution();
+    parse_tokens(tokens, fout, token_count);
 
     // we are legendary programmers BRO
     free(tokens);
 }
-
