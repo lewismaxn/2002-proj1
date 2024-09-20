@@ -6,6 +6,8 @@ Variables can only be numbers ===> return can only return a number
 
 a float cant be bigger than the allowable float size limit
 
+variables cannot be reassigned
+
 
 
 Problem:
