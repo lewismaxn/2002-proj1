@@ -245,9 +245,10 @@ void print_tokens(Token * tokens, int token_count) {
         printf("\n\n");
 }
 
-void build_fheader(Token * tokens, FunctionType type, int *pos);
+void build_fheader(Token * tokens, FunctionType type, int *pos, FILE *fout);
 void build_fbody(Token * tokens);
 void build_print(Token * tokens, FILE* fout, int length);
+
 
 void parse_tokens(Token * tokens, FILE* fout, int token_count, int line_count) {
     FunctionType f_type;
@@ -293,6 +294,10 @@ const FunctionType check_function_type(Token *tokens, int *pos) {
 void build_fheader(Token * tokens, FunctionType f_type, int *pos, FILE* fout) {
     if (tokens[*pos].type != TOKEN_IDENTIFIER) {
         fprintf(stderr, "!Trying to define function without an identifier");
+        // i want this to scan through the funtion until the last line of body and
+        // just skip it all
+
+        // break out of the loop when we dont find an indent
         while (true) {
             if (tokens[*pos].type == TOKEN_END && tokens[*pos+1].type != TOKEN_INDENT) {
             *pos++;
