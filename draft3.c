@@ -31,6 +31,11 @@ typedef enum {
     BUILDING_BODY,
 } BuildState;
 
+typedef enum {
+    VOID,
+    NUM
+} FunctionType;
+
 
 typedef struct {
     TokenType type;
@@ -54,7 +59,7 @@ void get_line_tokens(char *line, Token *tokens, int *token_count) {
         (*token_count)++;
     }
     tokens[*token_count] = token;
-    *token_count++;
+    (*token_count)++;
     Token end = {TOKEN_END, "end"};
     tokens[*token_count] = end;
 }
@@ -239,17 +244,20 @@ void print_tokens(Token * tokens, int token_count) {
         }
         printf("\n\n");
 }
-void build_fheader(Token * tokens, int line_count);
+
+void build_fheader(Token * tokens, FunctionType type, int *pos);
 void build_fbody(Token * tokens);
 void build_print(Token * tokens, FILE* fout, int length);
 
 void parse_tokens(Token * tokens, FILE* fout, int token_count, int line_count) {
+    FunctionType f_type;
     int pos = 0;
     while (pos < token_count) {
-        switch (tokens[0].type) {
+        switch (tokens[pos].type) {
             case TOKEN_FUNCTION: {
-                build_fheader(&tokens[pos], line_count, &pos);
+                f_type = check_function_type(tokens, &pos);
                 pos++;
+                build_fheader(tokens, f_type, &pos, fout);
                 break;
             }
             // case TOKEN_INDENT: {
@@ -266,27 +274,53 @@ void parse_tokens(Token * tokens, FILE* fout, int token_count, int line_count) {
     }
 }
 
-
-void build_fheader (Token * tokens, int line_count) {
-    // fputs
+const FunctionType check_function_type(Token *tokens, int *pos) {
+    // defining an int for the position in the array
+    int i = *pos;
     
-    printf("void %s(", tokens[1].value);
-    int i = 1; // not sure if it should be one??
-    while (tokens[i].type != TOKEN_END) { //because we will not come across an assignment in the header its just easier to do it like this so we can increment
-        if (tokens[i].type == TOKEN_IDENTIFIER){
-            i +=1;
-            printf("int %s", tokens[i].value); 
-            if (tokens[i].type == TOKEN_COMMA) {
-                printf(",");
-            }
+    while (true) {
+        if (tokens[i].type == TOKEN_END && tokens[i+1].type != TOKEN_INDENT) {
+            break;
         }
-        else {
-            char error_msg[MAX_ERROR];
-            fprintf(error, "Expected an identifier after funtion construction on line %d", line_count)
+        if (tokens[*pos].type == TOKEN_INDENT && tokens[*pos+1].type == TOKEN_RETURN) {
+            return NUM;
         }
         i++;
     }
-    printf(") {\n");
+    return VOID;
+}
+
+void build_fheader(Token * tokens, FunctionType f_type, int *pos, FILE* fout) {
+    if (tokens[*pos].type != TOKEN_IDENTIFIER) {
+        fprintf(stderr, "!Trying to define function without an identifier");
+        while (true) {
+            if (tokens[*pos].type == TOKEN_END && tokens[*pos+1].type != TOKEN_INDENT) {
+            *pos++;
+            return;
+            }
+            *pos++;
+        }
+    }
+    if (f_type == VOID) {
+        fprintf(fout, "void ");
+        fprintf(fout, tokens[*pos].value);
+        fprintf(fout, "(double ");
+        while (tokens[*pos].type != TOKEN_INDENT) {
+            fprintf(fout, ", double ");
+            fprintf(fout, tokens[*pos].value);
+        }
+        fprintf(fout, ") {\n");
+    }
+    if (f_type == NUM) {
+        fprintf(fout, "double ");
+        fprintf(fout, tokens[*pos].value);
+        fprintf(fout, "(double ");
+        while (tokens[*pos].type != TOKEN_INDENT) {
+            fprintf(fout, ", double ");
+            fprintf(fout, tokens[*pos].value);
+        }
+        fprintf(fout, ") {\n");
+    }
 }
 
 void build_print(Token *tokens, FILE* fout, int length) {
@@ -303,7 +337,7 @@ void build_print(Token *tokens, FILE* fout, int length) {
 
 int main(void) {
     // filename added for testing (mod when you want to change sources)
-    char filename[] = "program1.ml";
+    char filename[] = "program.ml";
     // buffer for the line to sit in while we play with it
     char line[BUFSIZ];
     // counter for the number of tokens per line
@@ -324,24 +358,13 @@ int main(void) {
         // check that the line is not a comment
         if (not_comment(line)) {
             // get all the tokens from the line
-            // the tokens will put in the tokens array
-
+            // the tokens will be appended in the token array
             get_line_tokens(line, tokens, &token_count);
         }
-
-        // DEBUGGING
-        // just printing all the tokens
-        print_tokens(tokens, token_count);
-        
-        // BuildState* build = INITIAL;
-        
-
         line_count++;
     }
     
-    parse_tokens(tokens, fout, token_count, line_count);
-    
-    print_tokens(tokens, token_count);
+    // parse_tokens(tokens, fout, token_count, line_count);
 
     print_tokens(tokens, token_count);
 
