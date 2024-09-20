@@ -246,7 +246,7 @@ void print_tokens(Token * tokens, int token_count) {
 }
 
 void build_fheader(Token * tokens, FunctionType type, int *pos, FILE *fout);
-void build_fbody(Token * tokens);
+void build_fbody(Token * tokens, int * pos);
 void build_print(Token * tokens, FILE* fout, int * pos);
 const FunctionType check_function_type(Token * tokens, int * pos);
 
@@ -270,7 +270,7 @@ void parse_tokens(Token * tokens, FILE* fout, int token_count) {
                 break;
             }
             case TOKEN_INDENT: {
-                *pos++;
+                pos++;
                 build_fbody(tokens, &pos);
             }
             case TOKEN_IDENTIFIER: {
@@ -298,7 +298,12 @@ const FunctionType check_function_type(Token *tokens, int *pos) {
             break;
         }
         if (tokens[*pos].type == TOKEN_INDENT && tokens[*pos+1].type == TOKEN_RETURN) {
-            return NUM;
+            if (tokens[*pos+2].type == TOKEN_END) {
+                return VOID;
+            }
+            else {
+                return NUM;
+            }
         }
         i++;
     }
@@ -342,8 +347,22 @@ void build_fheader(Token * tokens, FunctionType f_type, int *pos, FILE* fout) {
     }
 }
 
-void build_fbody(Token * tokens, int * pos) {
+void build_fbody(Token * tokens, FILE* fout, int * pos) {
+    if (tokens[*pos].type == TOKEN_PRINT) {
+        build_print(tokens, fout, pos);
+    }
+    if (tokens[*pos].type == TOKEN_RETURN) {
+        build_return(tokens, fout, pos);
+    }
 
+}
+
+void build_return(Token * tokens, FILE* fout, int * pos) {
+    while (tokens[*pos].type != TOKEN_END) {
+        fprintf(fout, "%s", tokens[*pos].value);
+        (*pos)++;
+    }
+    fprintf(fout, ";");
 }
 
 void build_assignment(Token * tokens, int *pos, FILE* fout) {
