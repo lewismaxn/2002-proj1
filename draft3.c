@@ -270,7 +270,7 @@ void parse_tokens(Token * tokens, FILE* fout, int token_count) {
                 break;
             }
             case TOKEN_INDENT: {
-                *pos++;
+                pos++;
                 build_fbody(tokens, &pos);
             }
             case TOKEN_IDENTIFIER: {
@@ -354,10 +354,15 @@ void build_fbody(Token * tokens, FILE* fout, int * pos) {
     if (tokens[*pos].type == TOKEN_RETURN) {
         build_return(tokens, fout, pos);
     }
+
 }
 
 void build_return(Token * tokens, FILE* fout, int * pos) {
-    while (tokens[*pos].type != )
+    while (tokens[*pos].type != TOKEN_END) {
+        fprintf(fout, "%s", tokens[*pos].value);
+        (*pos)++;
+    }
+    fprintf(fout, ";");
 }
 
 void build_assignment(Token * tokens, int *pos, FILE* fout) {
