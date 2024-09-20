@@ -245,14 +245,15 @@ void build_assignment(Token * tokens, FILE* fout, int *pos);
 void build_return(Token * tokens, FILE* fout, int * pos);
 const FunctionType check_function_type(Token * tokens, int * pos);
 
-void parse_tokens(Token * tokens, FILE* fout, int token_count) {
+void parse_tokens(Token * tokens, FILE* functions, FILE* main, int token_count) {
     // declaring a variable for our function type:
         // defines if the funtion being parsed will return a value or not
     FunctionType f_type;
     // a marker for our position in the token array
     int pos = 0;
     // check the token type at the position in the array
-    
+
+
     while (pos < token_count) {
         // check for function, assignment or print
         switch (tokens[pos].type) {
@@ -264,21 +265,21 @@ void parse_tokens(Token * tokens, FILE* fout, int token_count) {
                 f_type = check_function_type(tokens, &pos);
                 pos++;
                 printf("state = %d", f_type);
-                //build_fheader(tokens, f_type, &pos, fout);
+                build_fheader(tokens, f_type, &pos, functions);
                 break;
             }
             case TOKEN_INDENT: {
                 pos++;
-                build_fbody(tokens, fout, &pos);
+                build_fbody(tokens, functions, &pos);
                 break;
             }
             case TOKEN_IDENTIFIER: {
-                build_assignment(tokens, fout, &pos);
+                build_assignment(tokens, main, &pos);
                 break;
             }
             case TOKEN_PRINT: {
                 pos++;
-                build_print(tokens, fout, &pos);
+                build_print(tokens, main, &pos);
                 break;
             }
             default: {
@@ -347,15 +348,15 @@ void build_fheader(Token * tokens, FunctionType f_type, int *pos, FILE* fout) {
     }
 }
 
-void build_fbody(Token * tokens, FILE* fout, int * pos) {
+void build_fbody(Token * tokens, FILE* functions, int * pos) {
     if (tokens[*pos].type == TOKEN_PRINT) {
-        build_print(tokens, fout, pos);
+        build_print(tokens, functions, pos);
     }
     if (tokens[*pos].type == TOKEN_RETURN) {
-        build_return(tokens, fout, pos);
+        build_return(tokens, functions, pos);
     }
     if (tokens[*pos].type == TOKEN_IDENTIFIER) {
-        build_assignment(tokens, fout, pos);
+        build_assignment(tokens, functions, pos);
     }
 }
 
@@ -404,6 +405,23 @@ void execution(){
     system("./out");
 }
 
+void write_to_out(FILE* fout) {
+    FILE* functions = fopen("functions.c", "r");
+    FILE* main = fopen("main.c", "r");
+    
+    char buffer[BUFSIZ];
+
+    fprintf(fout, "#include <stdio.h>");
+    while(fgets(buffer, sizeof(buffer), functions) != NULL) {
+        fprintf(fout, "%s", buffer);
+    }
+    fprintf(fout, "\n\nint main(void) {\n");
+    while(fgets(buffer, sizeof(buffer), main) != NULL) {
+        fprintf(fout, "%s", buffer);
+    }
+    fprintf(fout, "\n}");
+}
+
 int main(void) {
     // filename added for testing (mod when you want to change sources)
     char filename[] = "program1.ml";
@@ -417,6 +435,8 @@ int main(void) {
     // file pointer to our file in read mode
     FILE* infile = fopen(filename, "r");
     FILE* fout = fopen("out.c", "w");
+    FILE* functions = fopen("functions.c", "w");
+    FILE* main = fopen("main.c", "w");
 
     int line_count = 0;
 
@@ -435,12 +455,13 @@ int main(void) {
     
     // parse_tokens(tokens, fout, token_count, line_count);
 
-    print_tokens(tokens, token_count);
+    parse_tokens(tokens, functions, main, token_count);
 
-    parse_tokens(tokens, fout, token_count);
+    write_to_out(fout);
 
     compiler();
     execution();
+    //remove_files();
 
     // we are legendary programmers BRO
     free(tokens);
