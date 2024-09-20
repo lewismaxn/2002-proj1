@@ -341,6 +341,10 @@ void build_fheader(Token * tokens, FunctionType f_type, int *pos, FILE* fout) {
     }
 }
 
+void build_fbody(Token * tokens, int * pos) {
+
+}
+
 void build_assignment(Token * tokens, int *pos, FILE* fout) {
     if (tokens[*pos+1].type == TOKEN_ASSIGNMENT) {
         fprintf(fout, "double ");
