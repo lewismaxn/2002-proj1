@@ -129,14 +129,7 @@ Token get_next_token(char* line, int* pos) {
         else
             // check for conditions of an identifier - 12 lowercase letters
             if (*pos - start > 12) {
-            
-            // VELJKO
-
-            // return error to stderr
-
-            //ERROR CHECK HERE
-
-            printf("Identifiers must be 12 alphanumeric characters");
+            fprintf(stderr, "Identifier '%s' is longer than 12 characters.\n", token.value);
             }
             else {
                 token.type = TOKEN_IDENTIFIER;
@@ -391,6 +384,14 @@ void build_print(Token *tokens, FILE* fout, int * pos) {
     fputs(printing, fout);
 }
 
+void compiler(){
+    system("cc -std=c11 -o out out.c");
+}
+
+void execution(){
+    system("./out");
+}
+
 int main(void) {
     // filename added for testing (mod when you want to change sources)
     char filename[] = "program1.ml";
@@ -425,6 +426,9 @@ int main(void) {
     print_tokens(tokens, token_count);
 
     parse_tokens(tokens, fout, token_count);
+
+    void compiler();
+    void execution();
 
     // we are legendary programmers BRO
     free(tokens);
