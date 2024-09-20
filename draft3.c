@@ -270,7 +270,8 @@ void parse_tokens(Token * tokens, FILE* fout, int token_count) {
                 break;
             }
             case TOKEN_INDENT: {
-                build_body(tokens, &pos);
+                *pos++;
+                build_fbody(tokens, &pos);
             }
             case TOKEN_IDENTIFIER: {
                 build_assignment(tokens, &pos, fout);
@@ -339,6 +340,10 @@ void build_fheader(Token * tokens, FunctionType f_type, int *pos, FILE* fout) {
         }
         fprintf(fout, ") {\n");
     }
+}
+
+void build_fbody(Token * tokens, int * pos) {
+
 }
 
 void build_assignment(Token * tokens, int *pos, FILE* fout) {
