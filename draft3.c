@@ -260,11 +260,17 @@ void parse_tokens(Token * tokens, FILE* fout, int token_count) {
     while (pos < token_count) {
         // check for function, assignment or print
         switch (tokens[pos].type) {
+            case TOKEN_END: {
+                pos++;
+            }
             case TOKEN_FUNCTION: {
                 f_type = check_function_type(tokens, &pos);
                 pos++;
                 build_fheader(tokens, f_type, &pos, fout);
                 break;
+            }
+            case TOKEN_INDENT: {
+                build_body(tokens, &pos);
             }
             case TOKEN_IDENTIFIER: {
                 build_assignment(tokens, &pos, fout);
@@ -337,10 +343,17 @@ void build_fheader(Token * tokens, FunctionType f_type, int *pos, FILE* fout) {
 
 void build_assignment(Token * tokens, int *pos, FILE* fout) {
     if (tokens[*pos+1].type == TOKEN_ASSIGNMENT) {
-        fprintf()
+        fprintf(fout, "double ");
+        fprintf(fout, "%s", tokens[*pos].value);
+        fprintf(fout, " = ");
+        // skipping over the assignment and identifier char
+        *pos += 2;
+        while (tokens[pos].type != TOKEN_END) {
+            fprintf(fout, "%s", tokens[*pos].value)
+            *pos++;
+        }
     }
 }
-
 
 void build_print(Token *tokens, FILE* fout, int * pos) {
     fputs("double printout =", fout);
