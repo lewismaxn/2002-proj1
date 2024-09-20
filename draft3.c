@@ -245,9 +245,24 @@ void print_tokens(Token * tokens, int token_count) {
         printf("\n\n");
 }
 
-void build_fheader(Token * tokens, FunctionType type, int *pos);
 void build_fbody(Token * tokens);
 void build_print(Token * tokens, FILE* fout, int length);
+
+const FunctionType check_function_type(Token *tokens, int *pos) {
+    // defining an int for the position in the array
+    int i = *pos;
+    
+    while (true) {
+        if (tokens[i].type == TOKEN_END && tokens[i+1].type != TOKEN_INDENT) {
+            break;
+        }
+        if (tokens[*pos].type == TOKEN_INDENT && tokens[*pos+1].type == TOKEN_RETURN) {
+            return NUM;
+        }
+        i++;
+    }
+    return VOID;
+}
 
 void parse_tokens(Token * tokens, FILE* fout, int token_count, int line_count) {
     FunctionType f_type;
@@ -274,21 +289,7 @@ void parse_tokens(Token * tokens, FILE* fout, int token_count, int line_count) {
     }
 }
 
-const FunctionType check_function_type(Token *tokens, int *pos) {
-    // defining an int for the position in the array
-    int i = *pos;
-    
-    while (true) {
-        if (tokens[i].type == TOKEN_END && tokens[i+1].type != TOKEN_INDENT) {
-            break;
-        }
-        if (tokens[*pos].type == TOKEN_INDENT && tokens[*pos+1].type == TOKEN_RETURN) {
-            return NUM;
-        }
-        i++;
-    }
-    return VOID;
-}
+
 
 void build_fheader(Token * tokens, FunctionType f_type, int *pos, FILE* fout) {
     if (tokens[*pos].type != TOKEN_IDENTIFIER) {
@@ -335,6 +336,14 @@ void build_print(Token *tokens, FILE* fout, int length) {
     fputs(printing, fout);
 }
 
+void compiler() {
+    system ("cc -std=c11 -o out out.c");
+}
+
+void execution() {
+    system("./out");
+}
+
 int main(void) {
     // filename added for testing (mod when you want to change sources)
     char filename[] = "program.ml";
@@ -368,6 +377,11 @@ int main(void) {
 
     print_tokens(tokens, token_count);
 
+    compiler();
+
+    execution();
+
     // we are legendary programmers BRO
     free(tokens);
 }
+
