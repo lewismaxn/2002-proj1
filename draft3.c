@@ -239,8 +239,10 @@ void print_tokens(Token * tokens, int token_count) {
 }
 
 void build_fheader(Token * tokens, FunctionType type, int *pos, FILE *fout);
-void build_fbody(Token * tokens, int * pos);
+void build_fbody(Token * tokens, FILE* fout, int * pos);
 void build_print(Token * tokens, FILE* fout, int * pos);
+void build_assignment(Token * tokens, FILE* fout, int *pos);
+void build_return(Token * tokens, FILE* fout, int * pos);
 const FunctionType check_function_type(Token * tokens, int * pos);
 
 void parse_tokens(Token * tokens, FILE* fout, int token_count) {
@@ -250,6 +252,7 @@ void parse_tokens(Token * tokens, FILE* fout, int token_count) {
     // a marker for our position in the token array
     int pos = 0;
     // check the token type at the position in the array
+    
     while (pos < token_count) {
         // check for function, assignment or print
         switch (tokens[pos].type) {
@@ -264,10 +267,10 @@ void parse_tokens(Token * tokens, FILE* fout, int token_count) {
             }
             case TOKEN_INDENT: {
                 pos++;
-                build_fbody(tokens, &pos);
+                build_fbody(tokens, fout, &pos);
             }
             case TOKEN_IDENTIFIER: {
-                build_assignment(tokens, &pos, fout);
+                build_assignment(tokens, fout, &pos);
                 break;
             }
             case TOKEN_PRINT: {
@@ -347,7 +350,9 @@ void build_fbody(Token * tokens, FILE* fout, int * pos) {
     if (tokens[*pos].type == TOKEN_RETURN) {
         build_return(tokens, fout, pos);
     }
-
+    if (tokens[*pos].type == TOKEN_IDENTIFIER) {
+        build_assignment(tokens, fout, pos);
+    }
 }
 
 void build_return(Token * tokens, FILE* fout, int * pos) {
@@ -358,16 +363,16 @@ void build_return(Token * tokens, FILE* fout, int * pos) {
     fprintf(fout, ";");
 }
 
-void build_assignment(Token * tokens, int *pos, FILE* fout) {
+void build_assignment(Token * tokens, FILE* fout, int *pos) {
     if (tokens[*pos+1].type == TOKEN_ASSIGNMENT) {
         fprintf(fout, "double ");
         fprintf(fout, "%s", tokens[*pos].value);
         fprintf(fout, " = ");
         // skipping over the assignment and identifier char
         *pos += 2;
-        while (tokens[pos].type != TOKEN_END) {
-            fprintf(fout, "%s", tokens[*pos].value)
-            *pos++;
+        while (tokens[*pos].type != TOKEN_END) {
+            fprintf(fout, "%s", tokens[*pos].value);
+            (*pos)++;
         }
     }
 }
@@ -379,7 +384,7 @@ void build_print(Token *tokens, FILE* fout, int * pos) {
         fputs(tokens[*pos].value, fout);
         *pos += 1;
     }
-    fputs(";", fout);
+    fputs(";\n", fout);
     char printing[] = "if ((printout - (int)printout) == 0) {\nprintf(\"%d\", (int)printout);\n}\nelse {\nprintf(\"%lf\", printout);\n}";
     fputs(printing, fout);
 }
@@ -394,7 +399,7 @@ void execution(){
 
 int main(void) {
     // filename added for testing (mod when you want to change sources)
-    char filename[] = "program1.ml";
+    char filename[] = "program.ml";
     // buffer for the line to sit in while we play with it
     char line[BUFSIZ];
     // counter for the number of tokens per line
