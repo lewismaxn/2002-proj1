@@ -9,6 +9,24 @@
 #define MAX_ERROR 1000
 
 typedef enum {
+    /*
+    Token list:
+    
+    TOKEN_INT,
+    TOKEN_FLOAT,
+    TOKEN_IDENTIFIER    : string of alpha characters < 12
+    TOKEN_ASSIGNMENT    : <- keyword
+    TOKEN_OPERATOR      : (+,-,*,/) math operators
+    TOKEN_RETURN        : return keyword
+    TOKEN_FUNCTION      : function keyword
+    TOKEN_PRINT         : print keyword
+    TOKEN_COMMA         : (,)
+    TOKEN_LPAREN        : (
+    TOKEN_RPAREN        : )
+    TOKEN_END           : \0 escape character
+    TOKEN_INDENT        : \t tab character
+    */
+    
     TOKEN_INT,
     TOKEN_FLOAT,
     TOKEN_IDENTIFIER,
@@ -49,15 +67,22 @@ const char* token_type_to_string(TokenType type);
 
 
 void get_line_tokens(char *line, Token *tokens, int *token_count) {
+    
+    // declaring a token and a position in our line
     Token token;
     int pos = 0;
 
+    // get the next token from the line
     token = get_next_token(line, &pos);
-    while (token.type != TOKEN_END) {
+
+    // while generated token != \0 char
+    while (token.type != TOKEN_END) 
+    {
         tokens[*token_count] = token;
         token = get_next_token(line, &pos);
         (*token_count)++;
     }
+    
     tokens[*token_count] = token;
     (*token_count)++;
     Token end = {TOKEN_END, "end"};
@@ -247,21 +272,39 @@ const FunctionType check_function_type(Token * tokens, int * pos);
 
 void parse_tokens(Token * tokens, FILE* functions, FILE* main, int token_count) {
     // declaring a variable for our function type:
-        // defines if the funtion being parsed will return a value or not
-    FunctionType f_type;
+    // defines if the funtion being parsed will return a value or not
     // a marker for our position in the token array
     int pos = 0;
-    // check the token type at the position in the array
+    
 
+
+    /*
+    function will find keywords and perform translations to an output
+    file.
+
+    function -  identify the type of function
+                build function declaration with identifiers specified
+                iterate pos until end of line
+
+                check function type - checks for a return statement
+                to assign void or numerical return
+
+    print -     build an assignment for the expression being printed
+                print out evaluated expression
+
+    assignment- checks identifier and builds an assignment
+
+    indent -    builds a functions body when an indent char is found
+    */
 
     while (pos < token_count) {
-        // check for function, assignment or print
         switch (tokens[pos].type) {
             case TOKEN_END: {
                 pos++;
                 break;
             }
             case TOKEN_FUNCTION: {
+                FunctionType f_type;
                 f_type = check_function_type(tokens, &pos);
                 pos++;
                 printf("state = %d", f_type);
@@ -327,10 +370,14 @@ void build_fheader(Token * tokens, FunctionType f_type, int *pos, FILE* fout) {
     if (f_type == VOID) {
         fprintf(fout, "void ");
         fprintf(fout, "%s", tokens[(*pos)].value);
+        (*pos)++;
         fprintf(fout, "(double ");
-        while (tokens[*pos].type != TOKEN_INDENT) {
-            fprintf(fout, ", double ");
+        while (tokens[*pos].type != TOKEN_END) {
             fprintf(fout, "%s", tokens[*pos].value);
+            if (tokens[*pos+1].type != TOKEN_END) 
+            {
+                fprintf(fout, ", double ");
+            }
             (*pos)++;
         }
         fprintf(fout, ") {\n");
@@ -338,10 +385,15 @@ void build_fheader(Token * tokens, FunctionType f_type, int *pos, FILE* fout) {
     if (f_type == NUM) {
         fprintf(fout, "double ");
         fprintf(fout, "%s", tokens[*pos].value);
+        (*pos)++;
         fprintf(fout, "(double ");
-        while (tokens[*pos].type != TOKEN_INDENT) {
-            fprintf(fout, ", double ");
+        while (tokens[*pos].type != TOKEN_END) 
+        {
             fprintf(fout, "%s", tokens[*pos].value);
+            if (tokens[*pos+1].type != TOKEN_END) 
+            {
+                fprintf(fout, ", double ");
+            }
             (*pos)++;
         }
         fprintf(fout, ") {\n");
@@ -405,64 +457,90 @@ void execution(){
     system("./out");
 }
 
+void remove_files(void) {
+    system("rm functions.c");
+    system("rm main.c");
+    system("rm out.c");
+}
+
 void write_to_out(FILE* fout) {
     FILE* functions = fopen("functions.c", "r");
     FILE* main = fopen("main.c", "r");
     
+    if (functions == NULL) {
+        printf("cannot open functions");
+    }
+    if (main == NULL) {
+        printf("cannot open main");
+    }
+
     char buffer[BUFSIZ];
 
-    fprintf(fout, "#include <stdio.h>");
+    fprintf(fout, "#include <stdio.h>\n\n");
     while(fgets(buffer, sizeof(buffer), functions) != NULL) {
+        printf("%s\n", buffer);        
         fprintf(fout, "%s", buffer);
     }
     fprintf(fout, "\n\nint main(void) {\n");
     while(fgets(buffer, sizeof(buffer), main) != NULL) {
+        printf("%s\n", buffer);
         fprintf(fout, "%s", buffer);
     }
     fprintf(fout, "\n}");
+
+    //fclose();
 }
 
 int main(void) {
     // filename added for testing (mod when you want to change sources)
     char filename[] = "program1.ml";
-    // buffer for the line to sit in while we play with it
-    char line[BUFSIZ];
-    // counter for the number of tokens per line
-    int token_count = 0;
-    // allocating some memory for our tokens to sit in
-    // define pointer to this block
+    char PLACEHOLDER[] = "filename";
+
+    
+    // allocating a pointer to our tokens array
     Token* tokens = malloc(MAX_TOKENS * sizeof(Token));
+    int token_count = 0;
+    
+    
     // file pointer to our file in read mode
     FILE* infile = fopen(filename, "r");
+    if (infile == NULL) 
+    {
+        fprintf(stderr, "!File: %s could not be opened.", PLACEHOLDER);
+    }
+
+    // buffer for our line to sit in
+    char line[BUFSIZ];
+    
+    // get lines sequentially
+    while (fgets(line, sizeof(line), infile) != NULL) 
+    {
+        // comment check, get tokens for token array
+        if (not_comment(line)) 
+        {
+            get_line_tokens(line, tokens, &token_count);
+        }
+    }
+    
+
+    // file pointers for our outputted c code
     FILE* fout = fopen("out.c", "w");
     FILE* functions = fopen("functions.c", "w");
     FILE* main = fopen("main.c", "w");
 
-    int line_count = 0;
-
-    // grab a line from our file
-    while (fgets(line, sizeof(line), infile) != NULL) {
-        // this is for debugging (showing the origional line string)
-        printf("line: %s\n", line);
-        // check that the line is not a comment
-        if (not_comment(line)) {
-            // get all the tokens from the line
-            // the tokens will be appended in the token array
-            get_line_tokens(line, tokens, &token_count);
-        }
-        line_count++;
-    }
-    
-    // parse_tokens(tokens, fout, token_count, line_count);
-
+    // parsing the tokens in the tokens array
     parse_tokens(tokens, functions, main, token_count);
+    
+    fclose(functions);
+    fclose(main);
 
+    // free our allocated memory
+    free(tokens);
+    
+    // opening the 
     write_to_out(fout);
 
     compiler();
     execution();
-    //remove_files();
-
-    // we are legendary programmers BRO
-    free(tokens);
+    remove_files();
 }
