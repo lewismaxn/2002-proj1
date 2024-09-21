@@ -486,7 +486,7 @@ void write_to_out(FILE* fout) {
         printf("%s\n", buffer);
         fprintf(fout, "%s", buffer);
     }
-    fprintf(fout, "\n}");
+    fprintf(fout, "return 0;\n}");
 
     //fclose();
 }
@@ -542,5 +542,5 @@ int main(void) {
 
     compiler();
     execution();
-    remove_files();
+   // remove_files();
 }
