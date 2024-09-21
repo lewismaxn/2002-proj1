@@ -8,6 +8,8 @@
 #define MAX_TOKEN_VALUE 100
 #define MAX_ERROR 1000
 
+static int printCounter = 0;
+
 typedef enum {
     /*
     Token list:
@@ -438,15 +440,19 @@ void build_assignment(Token * tokens, FILE* fout, int *pos) {
 }
 
 void build_print(Token *tokens, FILE* fout, int * pos) {
-    fputs("double printout =", fout);
+    fprintf(fout, "double printout%d =", printCounter);
     while (tokens[*pos].type != TOKEN_END) {
         fputs(" ", fout);
         fputs(tokens[*pos].value, fout);
         *pos += 1;
     }
     fputs(";\n", fout);
-    char printing[] = "if ((printout - (int)printout) == 0) {\nprintf(\"%d\", (int)printout);\n}\nelse {\nprintf(\"%lf\", printout);\n}\n";
-    fputs(printing, fout);
+    fprintf(fout, "if ((printout%d - (int)printout%d) == 0) {\nprintf(", printCounter, printCounter);
+    fputs("\"%d\\n\"", fout);
+    fprintf(fout, ", (int)printout%d);\n}\nelse {\nprintf(", printCounter);
+    fputs("\"%lf\\n\"", fout);
+    fprintf(fout, ", printout%d);\n}\n", printCounter);
+    printCounter++;
 }
 
 void compiler(){
