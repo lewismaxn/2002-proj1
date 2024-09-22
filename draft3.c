@@ -5,16 +5,33 @@
 #include <stdbool.h>
 #include <sys/wait.h>
 
+
+/*
+We will be using a lexical analysis approach to solving the
+problem presented.
+
+We will tokenise the input file line by line and parse those
+tokens to a function that builds the final output c file
+
+This will happen in two steps, writing our function definitions
+and our program function into seperate c files before linking the
+two files into one output source file
+*/
+
+// defining some useful constants
 #define MAX_TOKENS 10000
 #define MAX_VALUE 100
 #define MAX_ERROR 1000
 #define MAX_FUNCTIONS 50
 #define MAX_ARGS 50
 
-// variable 
+// defining some counter variables that need to be static
+// over our program
 static int printCounter = 0;
-//static int functionsCounter = 0;
+static int functionsCounter = 0;
 
+
+// defining tokens
 typedef enum {
 	/*
 	Token list:
@@ -49,31 +66,29 @@ typedef enum {
 	TOKEN_INDENT
 } TokenType;
 
-typedef enum {
-	INITIAL,
-	BUILDING_PRINT,
-	BUILDING_FUNCTION,
-	BUILDING_BODY,
-} BuildState;
-
+// enumeration object that defines the category of function
 typedef enum {
 	VOID,
 	NUM
 } FunctionType;
 
-
+// our token structure
 typedef struct {
+	// enumerator defining type of token
 	TokenType type;
+	// value of said token
 	char value[MAX_VALUE];
 } Token;
 
+// structure for storing the identifier and arguments of a
+// generated function
 typedef struct {
 	char name[MAX_VALUE];
 	char args[MAX_ARGS][MAX_VALUE];
 } Function;
 
-Token get_next_token(char *line, int *pos);
 
+Token get_next_token(char *line, int *pos);
 const char* token_type_to_string(TokenType type);
 
 
@@ -104,22 +119,25 @@ void get_line_tokens(char *line, Token *tokens, int *token_count) {
 Token get_next_token(char* line, int* pos) {
 	/*
 	This function will take a pointer to an integer that dictates
-	the functions position in the array. It will iterate through the
-	array and check each characters value and do something.
+	the current position in the token array. It will iterate through the
+	array and check each characters value and generate tokens.
 
 	We should be able to step through the line grabbing tokens for every
 	keyword, number and assignment in the line. The function will also
-	identify indents so that we can see the body of functions.
-
-	I'll comment to explain but hit me up to talk about it
+	identify indents so that we can mark the body of functions.
 	*/
 	
 	
-	// declaring a token (this is what we will return when called)
+	// declaring a token (this is what we will return when function is called)
 	Token token;
 	
-	// we are going to be skipping whitespaces so lets check tabs first
-	// this was a headache 
+	/* 
+	we are going to be skipping whitespaces so lets check tabs first
+	this was a headache, we will compare the address of the first char in the
+	line to the address of where the \t or 4 whitespaces first appears in said
+	line, this will allow us to identify if the line is tabbed
+	*/
+
 	if (*pos == 0 && (line == strstr(line, "    ") || line == strstr(line, "\t"))) {
 			// we can add a counter for the number of tabs here if we need
 			strcpy(token.value, "INDENT");
@@ -127,32 +145,32 @@ Token get_next_token(char* line, int* pos) {
 			(*pos)++;
 			return token;
 	}
-	//returning to avoid reassignment
+	//returning token to avoid reassignment later
 	
 	
 	// Skip whitespace
+	// will just move pos along until a char is found
 	while (isspace(line[*pos])) (*pos)++;  
+
 
 	// checking for alphanumeric tokens (identifiers and keywords)
 	if (isalpha(line[*pos])) {
-		// identify the start of the string value
+		// identify the start position of the token string
 		int start = *pos;
 		// iterate as long as we have an alphanumeric char
 		// this will give us a postion along the array
 		while (isalnum(line[*pos])) (*pos)++;        
 		// copy string from start to pos into token.value
+		
 		/*
-		if you arent sure, strcpy will copy from a memory address
-		&line[start] - the start of the string
-		and will copy some amount of bytes 
-		(*pos - start) - final position minus the start position
-		to some address (token.value)
+		copying from the start address for pos - start bytes
 		*/
+
 		strncpy(token.value, &line[start], *pos - start);
 		// add the exit char when at the final position in the string
 		token.value[*pos - start] = '\0';
 
-		// check for a keyword first
+		// compare the value we found to our keywords
 		if (strcmp(token.value, "print") == 0)
 			token.type = TOKEN_PRINT;
 		else if (strcmp(token.value, "function") == 0)
@@ -160,25 +178,33 @@ Token get_next_token(char* line, int* pos) {
 		else if (strcmp(token.value, "return") == 0)
 			token.type = TOKEN_RETURN;
 		
-		// if a keyword isn't found then string is an identifier
+		// if a keyword isn't found then string must be an identifier
 		else
 			// check for conditions of an identifier - 12 lowercase letters
 			if (*pos - start > 12) {
 			fprintf(stderr, "Identifier '%s' is longer than 12 characters.\n", token.value);
 			}
 			else {
+				// if condition is ok we assign token type
 				token.type = TOKEN_IDENTIFIER;
 			}
 	}
 
+
+	// Now handling numbers
+
 	// check for a digit 
-	else if (isdigit(line[*pos])) {  // Numbers
+	else if (isdigit(line[*pos])) {
+		// same trick to put the value of the number in the token.value
 		int start = *pos;
-		// if number continues or a dp is found then just increase position
+		// if number continues or a dp is found then just keep pos++
 		while (isdigit(line[*pos]) || line[*pos] == '.') (*pos)++;
-		// copy the value as a string to the token.value
+		// one number ends copy the value as the string to the token.value
 		strncpy(token.value, &line[start], *pos - start);
+		// and append exit char
 		token.value[*pos - start] = '\0';
+
+		// identify if the number is a float or an int
 		for (int i = 0; i < (*pos - start); i++) {
 			if (token.value[i] == '.') {
 				token.type = TOKEN_FLOAT;
@@ -190,15 +216,22 @@ Token get_next_token(char* line, int* pos) {
 		}
 	} 
 
-	// check now for assignment: if the less than char is found check
-	// for a - in next position and if found then its an assignment
+
+	// TOKEN_ASSIGNMENT
+
+	// check now for assignment: if '<' char is found check
+	// for '-' in next position and if found set type to assignment
 	else if (line[*pos] == '<' && line[*pos + 1] == '-') { 
 		(*pos) += 2;
 		token.type = TOKEN_ASSIGNMENT;
 		strcpy(token.value, "<-");
 	}
+
+
+	// TOKEN_OPPERATOR
+
 	// check for an operator and copy into token.value
-	else if (line[*pos] == '+' || line[*pos] == '-' || line[*pos] == '*' || line[*pos] == '/') {  // Operators
+	else if (line[*pos] == '+' || line[*pos] == '-' || line[*pos] == '*' || line[*pos] == '/') { 
 		token.value[0] = line[*pos];
 		// appending a exit to the string
 		token.value[1] = '\0';
@@ -223,14 +256,15 @@ Token get_next_token(char* line, int* pos) {
 		(*pos)++;
 	} 
 
-	// if the string is finished then we find an exit character and just
-	// return the end token
-	else if (line[*pos] == '\0') {
+	// if the line is finished line[pos] will be the exit char
+ 	else if (line[*pos] == '\0') {
 		token.type = TOKEN_END;
+		strcpy(token.value, "end");
 	} 
-	// finally, if nothing makes sense we say that 
+	
+	// finally, if nothing makes sense we call an error
 	else {
-		printf("Unexpected character: %c\n", line[*pos]);
+		fprintf(stderr, "Unexpected character: %c\n", line[*pos]);
 		exit(1);
 	}
 
@@ -245,7 +279,8 @@ bool not_comment(char * line) {
 
 const char* token_type_to_string(TokenType type) {
 	// switch to turn the identifier to a string of the same name
-	
+	// used for debugging
+
 	switch (type) {
 		case TOKEN_IDENTIFIER: return "TOKEN_IDENTIFIER";
 		case TOKEN_INT: return "TOKEN_INT";
@@ -265,20 +300,25 @@ const char* token_type_to_string(TokenType type) {
 }
 
 void print_tokens(Token * tokens, int token_count) {
+	// another function for debugging
+	
 	for (int i = 0; i < token_count; i++) {
+			// I hope you arent reading this on vim otherwise this statement will be very longggggggggggggggggggg
 			printf("Token Type: %-20s Token Value: %s\n", token_type_to_string(tokens[i].type), tokens[i].value);
 		}
 		printf("\n\n");
 }
 
+
 void build_fheader(Token * tokens, FunctionType type, int *pos, FILE *fout, Function* functionList);
 void build_fbody(Token * tokens, FILE* fout, Function* functionList, int * pos);
 void build_print(Token * tokens, FILE* fout, int * pos);
-void build_assignment(Token * tokens, FILE* fout, Function * functionList, int *pos);
+void build_assignment(Token * tokens, FILE* fout, int *pos);
 void build_return(Token * tokens, FILE* fout, int * pos);
 const FunctionType check_function_type(Token * tokens, int * pos);
 
 void build_function_close(FILE * functions) {
+	// terminating curly brace for end of function
 	fprintf(functions, "}\n\n");
 }
 
@@ -288,7 +328,10 @@ void parse_tokens(Token * tokens, FILE* functions, FILE* main, int token_count, 
 	// a marker for our position in the token array
 	int pos = 0;
 	bool buildingBody = false;
+<<<<<<< HEAD
+=======
 	
+>>>>>>> refs/remotes/origin/main
 	/*
 	function will find keywords and perform translations to an output
 	file.
@@ -308,21 +351,14 @@ void parse_tokens(Token * tokens, FILE* functions, FILE* main, int token_count, 
 	indent -    builds a functions body when an indent char is found
 	*/
 
+	// until we reach the end of the token array
 	while (pos < token_count) {
+		// checking the type of the pos-th token
 		switch (tokens[pos].type) {
 			case TOKEN_END: {
+				// if we find the end of the line we want to keep moving
+				// end token is a utility not a marker
 				pos++;
-				break;
-			}
-			case TOKEN_FUNCTION: {
-					if (buildingBody) {
-				build_function_close(functions);
-				buildingBody = false;
-				}
-				FunctionType f_type;
-				f_type = check_function_type(tokens, &pos);
-				pos++;
-				build_fheader(tokens, f_type, &pos, functions, functionList);
 				break;
 			}
 			case TOKEN_INDENT: {
@@ -333,21 +369,50 @@ void parse_tokens(Token * tokens, FILE* functions, FILE* main, int token_count, 
 				build_fbody(tokens, functions, functionList, &pos);
 				break;
 			}
-			case TOKEN_IDENTIFIER: {
-					if (buildingBody) {
-				build_function_close(functions);
-				buildingBody = false;
+			case TOKEN_FUNCTION: {
+				// terminate function
+				if (buildingBody) 
+				{
+					build_function_close(functions);
+					buildingBody = false;
 				}
-				build_assignment(tokens, main, functionList, &pos);
+
+				FunctionType f_type;
+				f_type = check_function_type(tokens, &pos);
+				printf("\nfunction type: %d", f_type);
+				pos++;
+				build_fheader(tokens, f_type, &pos, functions, functionList);
+				break;
+			}
+			case TOKEN_IDENTIFIER: {
+				if (buildingBody) 
+				{
+					build_function_close(functions);
+					buildingBody = false;
+				}
+				
+				// check if the identifier is in our function list
+				for (int i = 0; i < MAX_FUNCTIONS; i++) 
+				{
+					if (strcmp(functionList[i].name, tokens[pos].value)) 
+					{
+						build_function_call(tokens, main, &pos);
+						inList = true;
+						break;
+					}
+				}
+				if (!inList)
+				{
+					build_assignment(tokens, main, &pos);
+				}
 				break;
 			}
 			case TOKEN_PRINT: {
-				if (buildingBody) 
+				if (buildingBody)
 				{
-				build_function_close(functions);
-				buildingBody = false;
+					build_function_close(functions);
+					buildingBody = false;
 				}
-				pos++;
 				build_print(tokens, main, &pos);
 				break;
 			}
@@ -355,6 +420,9 @@ void parse_tokens(Token * tokens, FILE* functions, FILE* main, int token_count, 
 				break;
 			}
 		}
+	}
+	if (buildingBody) {
+		build_function_close(functions);
 	}
 }
 
@@ -365,8 +433,8 @@ const FunctionType check_function_type(Token *tokens, int *pos) {
 		if (tokens[i].type == TOKEN_END && tokens[i+1].type != TOKEN_INDENT) {
 			break;
 		}
-		if (tokens[*pos].type == TOKEN_INDENT && tokens[*pos+1].type == TOKEN_RETURN) {
-			if (tokens[*pos+2].type == TOKEN_END) {
+		if (tokens[i].type == TOKEN_INDENT && tokens[i+1].type == TOKEN_RETURN) {
+			if (tokens[i+2].type == TOKEN_END) {
 				return VOID;
 			}
 			else {
@@ -384,7 +452,7 @@ void build_void_function(Token * tokens, FILE* fout, Function* functionList, int
 	int argCount = 0;
 
 	// function declaration
-	fprintf(fout, "double ");
+	fprintf(fout, "void ");
 	// function identifier
 	fprintf(fout, "%s", tokens[*pos].value);
 	// copy to function name
@@ -445,7 +513,9 @@ void build_num_function(Token * tokens, FILE* fout, Function* functionList, int 
 	// functionsCounter++;
 }
 
-
+void build_function_call(Token * tokens, FILE* main, int * pos) {
+	;
+}
 
 void build_fheader(Token * tokens, FunctionType f_type, int *pos, FILE* functions, Function* functionList) {
 	if (tokens[*pos].type != TOKEN_IDENTIFIER) {
@@ -466,9 +536,8 @@ void build_fheader(Token * tokens, FunctionType f_type, int *pos, FILE* function
 		build_void_function(tokens, functions, functionList, pos);
 	}
 	if (f_type == NUM) {
-		build_void_function(tokens, functions, functionList, pos);
+		build_num_function(tokens, functions, functionList, pos);
 	}
-	
 }
 
 void build_fbody(Token * tokens, FILE* functions, Function * functionList, int * pos) {
@@ -479,11 +548,12 @@ void build_fbody(Token * tokens, FILE* functions, Function * functionList, int *
 		build_return(tokens, functions, pos);
 	}
 	if (tokens[*pos].type == TOKEN_IDENTIFIER) {
-		build_assignment(tokens, functions, functionList, pos);
+		build_assignment(tokens, functions, pos);
 	}	
 }
 
 void build_return(Token * tokens, FILE* fout, int * pos) {
+	(*pos)++;
 	fprintf(fout, "return ");
 	while (tokens[*pos].type != TOKEN_END) {
 		fprintf(fout, "%s", tokens[*pos].value);
@@ -492,7 +562,7 @@ void build_return(Token * tokens, FILE* fout, int * pos) {
 	fprintf(fout, ";\n");
 }
 
-void build_assignment(Token * tokens, FILE* outfile, Function* functionList, int *pos) {
+void build_assignment(Token * tokens, FILE* outfile, int *pos) {
 	int count = 0;
 	if (tokens[(*pos)+1].type == TOKEN_ASSIGNMENT) {
 		count++;
@@ -511,7 +581,8 @@ void build_assignment(Token * tokens, FILE* outfile, Function* functionList, int
 
 void build_print(Token *tokens, FILE* fout, int * pos) {
 	// assigning a variable 
-	
+	(*pos)++;
+
 	fprintf(fout, "double printout%d =", printCounter);
 	while (tokens[*pos].type != TOKEN_END) {
 		fputs(" ", fout);
@@ -638,5 +709,5 @@ int main(void) {
 
 	compiler();
 	execution();
-    //remove_files();
+    remove_files();
 }
