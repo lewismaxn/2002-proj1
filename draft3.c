@@ -316,6 +316,7 @@ void build_print(Token * tokens, FILE* fout, int * pos);
 void build_assignment(Token * tokens, FILE* fout, int *pos);
 void build_return(Token * tokens, FILE* fout, int * pos);
 const FunctionType check_function_type(Token * tokens, int * pos);
+void build_function_call(Token * tokens, FILE* main, int * pos);
 
 void build_function_close(FILE * functions) {
 	// terminating curly brace for end of function
@@ -707,5 +708,5 @@ int main(void) {
 
 	compiler();
 	execution();
-    remove_files();
+    // remove_files();
 }
