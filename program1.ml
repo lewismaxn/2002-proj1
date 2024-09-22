@@ -4,10 +4,10 @@ function funcy a
 
 y <- 10
 
-function funcer value
+function funcer value x
     return value
 
-<<<<<<< HEAD
+
 print y
-=======
->>>>>>> 2b5cc47c8a7b061f95776cf9ad06a55fe49a46e6
+funcer (10, 2)
+
