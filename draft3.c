@@ -402,7 +402,7 @@ void parse_tokens(Token * tokens, FILE* functions, FILE* main, int token_count, 
 				{
 					if (strcmp(functionList[i].name, tokens[pos].value)) 
 					{
-						//build_function_call(tokens, main, &pos);
+						build_function_call(tokens, main, &pos);
 						inList = true;
 						break;
 					}
@@ -427,6 +427,9 @@ void parse_tokens(Token * tokens, FILE* functions, FILE* main, int token_count, 
 			}
 		}
 	}
+	if (buildingBody) {
+		build_function_close(functions);
+	}
 }
 
 const FunctionType check_function_type(Token *tokens, int *pos) {
@@ -436,8 +439,8 @@ const FunctionType check_function_type(Token *tokens, int *pos) {
 		if (tokens[i].type == TOKEN_END && tokens[i+1].type != TOKEN_INDENT) {
 			break;
 		}
-		if (tokens[*pos].type == TOKEN_INDENT && tokens[*pos+1].type == TOKEN_RETURN) {
-			if (tokens[*pos+2].type == TOKEN_END) {
+		if (tokens[i].type == TOKEN_INDENT && tokens[i+1].type == TOKEN_RETURN) {
+			if (tokens[i+2].type == TOKEN_END) {
 				return VOID;
 			}
 			else {
@@ -455,7 +458,7 @@ void build_void_function(Token * tokens, FILE* fout, Function* functionList, int
 	int argCount = 0;
 
 	// function declaration
-	fprintf(fout, "double ");
+	fprintf(fout, "void ");
 	// function identifier
 	fprintf(fout, "%s", tokens[*pos].value);
 	// copy to function name
@@ -516,7 +519,9 @@ void build_num_function(Token * tokens, FILE* fout, Function* functionList, int 
 	functionsCounter++;
 }
 
-
+void build_function_call(Token * tokens, FILE* main, int * pos) {
+	;
+}
 
 void build_fheader(Token * tokens, FunctionType f_type, int *pos, FILE* functions, Function* functionList) {
 	if (tokens[*pos].type != TOKEN_IDENTIFIER) {
@@ -537,9 +542,8 @@ void build_fheader(Token * tokens, FunctionType f_type, int *pos, FILE* function
 		build_void_function(tokens, functions, functionList, pos);
 	}
 	if (f_type == NUM) {
-		build_void_function(tokens, functions, functionList, pos);
+		build_num_function(tokens, functions, functionList, pos);
 	}
-	
 }
 
 void build_fbody(Token * tokens, FILE* functions, Function * functionList, int * pos) {
@@ -555,6 +559,7 @@ void build_fbody(Token * tokens, FILE* functions, Function * functionList, int *
 }
 
 void build_return(Token * tokens, FILE* fout, int * pos) {
+	(*pos)++;
 	fprintf(fout, "return ");
 	while (tokens[*pos].type != TOKEN_END) {
 		fprintf(fout, "%s", tokens[*pos].value);
@@ -646,7 +651,7 @@ void write_to_out(FILE* fout) {
 	}
 	fprintf(fout, "return 0;\n}\n");
 
-	// fclose();
+	fclose(fout);
 }
 
 int main(void) {
@@ -700,7 +705,7 @@ int main(void) {
 	// opening the 
 	write_to_out(fout);
 
-	// compiler();
-	// execution();
-    //remove_files();
+	compiler();
+	execution();
+    remove_files();
 }
