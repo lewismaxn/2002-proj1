@@ -8,6 +8,8 @@
 #define MAX_TOKEN_VALUE 100
 #define MAX_ERROR 1000
 
+
+// variable 
 static int printCounter = 0;
 
 typedef enum {
@@ -319,6 +321,8 @@ void parse_tokens(Token * tokens, FILE* functions, FILE* main, int token_count) 
                 break;
             }
             case TOKEN_INDENT: {
+                // if ident is found, go to next token and build
+                // a line in the function
                 if (isfunctionbody){
                     pos++;
                     build_fbody(tokens, functions, &pos);                        
@@ -441,31 +445,34 @@ void build_fbody(Token * tokens, FILE* functions, int * pos) {
 }
 
 void build_return(Token * tokens, FILE* fout, int * pos) {
+    fprintf(fout, "return ");
     while (tokens[*pos].type != TOKEN_END) {
         fprintf(fout, "%s", tokens[*pos].value);
         (*pos)++;
     }
-    fprintf(fout, ";");
+    fprintf(fout, ";\n");
 }
 
-void build_assignment(Token * tokens, FILE* fout, int *pos) {
+void build_assignment(Token * tokens, FILE* outfile, int *pos) {
     int count = 0;
     if (tokens[(*pos)+1].type == TOKEN_ASSIGNMENT && count < 100) {
         count++;
-        fprintf(fout, "double ");
-        fprintf(fout, "%s", tokens[*pos].value);
-        fprintf(fout, " = ");
+        fprintf(outfile, "double ");
+        fprintf(outfile, "%s", tokens[*pos].value);
+        fprintf(outfile, " = ");
         // skipping over the assignment and identifier char
         *pos += 2;
         while (tokens[*pos].type != TOKEN_END) {
-            fprintf(fout, "%s", tokens[*pos].value);
+            fprintf(outfile, "%s", tokens[*pos].value);
             (*pos)++;
         }
-        fprintf(fout, ";\n");
+        fprintf(outfile, ";\n");
     }
 }
 
 void build_print(Token *tokens, FILE* fout, int * pos) {
+    // assigning a variable 
+    
     fprintf(fout, "double printout%d =", printCounter);
     while (tokens[*pos].type != TOKEN_END) {
         fputs(" ", fout);
@@ -582,7 +589,7 @@ int main(void) {
     // opening the 
     write_to_out(fout);
 
-    compiler();
-    execution();
+    // compiler();
+    // execution();
    // remove_files();
 }
