@@ -616,10 +616,10 @@ void build_print(Token *tokens, FILE* fout, int * pos) {
 void compiler(){
 	int result = system("cc -std=c11 -Wall -Werror -o out out.c");
 	if (result !=0) {
-		fprintf(stderr, "Error in compilation \n");
+		fprintf(stderr, "!Error in compilation \n");
 		exit(EXIT_FAILURE);
 	}
-	system("chmod +x ${fileDirname}/out");
+	system("chmod +x ./out");
 }
 
 void execution(){
