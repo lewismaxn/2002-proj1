@@ -3,6 +3,7 @@
 #include <string.h>
 #include <ctype.h>
 #include <stdbool.h>
+#include <sys/wait.h>
 
 #define MAX_TOKENS 10000
 #define MAX_TOKEN_VALUE 100
@@ -11,7 +12,7 @@
 
 // variable 
 static int printCounter = 0;
-static int functionsCounter = 0;
+//static int functionsCounter = 0;
 
 typedef enum {
 	/*
@@ -267,7 +268,7 @@ void print_tokens(Token * tokens, int token_count) {
 		printf("\n\n");
 }
 
-void build_fheader(Token * tokens, FunctionType type, int *pos, FILE *fout, char *functionList);
+void build_fheader(Token * tokens, FunctionType type, int *pos, FILE *fout);
 void build_fbody(Token * tokens, FILE* fout, int * pos);
 void build_print(Token * tokens, FILE* fout, int * pos);
 void build_assignment(Token * tokens, FILE* fout, int *pos);
@@ -284,7 +285,6 @@ void parse_tokens(Token * tokens, FILE* functions, FILE* main, int token_count) 
 	// a marker for our position in the token array
 	int pos = 0;
 	bool buildingBody = false;
-	char functionList[50][12];
 	/*
 	function will find keywords and perform translations to an output
 	file.
@@ -318,7 +318,7 @@ void parse_tokens(Token * tokens, FILE* functions, FILE* main, int token_count) 
 				FunctionType f_type;
 				f_type = check_function_type(tokens, &pos);
 				pos++;
-				build_fheader(tokens, f_type, &pos, functions, &functionList);
+				build_fheader(tokens, f_type, &pos, functions);
 				break;
 			}
 			case TOKEN_INDENT: {
@@ -376,7 +376,7 @@ const FunctionType check_function_type(Token *tokens, int *pos) {
 	return VOID;
 }
 
-void build_fheader(Token * tokens, FunctionType f_type, int *pos, FILE* fout, char * functionList) {
+void build_fheader(Token * tokens, FunctionType f_type, int *pos, FILE* fout) {
 	if (tokens[*pos].type != TOKEN_IDENTIFIER) {
 		fprintf(stderr, "!Trying to define function without an identifier");
 		// i want this to scan through the funtion until the last line of body and
@@ -481,18 +481,17 @@ void build_print(Token *tokens, FILE* fout, int * pos) {
 }
 
 void compiler(){
-	int result = system("cc -std=c11 -o out out.c");
-	system("chmod +x out");
+	int result = system("cc -std=c11 -Wall -Werror -o /workspaces/2002-proj1/out /workspaces/2002-proj1/out.c");
 	if (result !=0) {
 		fprintf(stderr, "Error in compilation \n");
 		exit(EXIT_FAILURE);
 	}
+	system("chmod +x /workspaces/2002-proj1/out");
 	
 }
 
 void execution(){
-	int result = system("./out");
-	system("./out");
+	int result = system("./workspaces/2002-proj1/out");
 	if (result !=0) {
 		fprintf(stderr, "Error in execution \n");
 	}
@@ -584,5 +583,5 @@ int main(void) {
 
 	compiler();
 	execution();
-    remove_files();
+    //remove_files();
 }
