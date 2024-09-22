@@ -3,9 +3,7 @@ y <- 20
 function a b
     b <- 15
 e <- 20
-function d c
+function 2 c
     d <- 11
-	print d
+	return d
 k <- 2
-
-a(b)
