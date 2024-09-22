@@ -7,4 +7,3 @@ y <- 10
 function funcer value
     return value
 
-print y

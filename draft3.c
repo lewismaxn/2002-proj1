@@ -384,22 +384,25 @@ void parse_tokens(Token * tokens, FILE* functions, FILE* main, int token_count, 
 					buildingBody = false;
 				}
 
+				// declare a function
 				FunctionType f_type;
 				f_type = check_function_type(tokens, &pos);
-				printf("\nfunction type: %d", f_type);
 				pos++;
 				build_fheader(tokens, f_type, &pos, functions, functionList);
 				break;
 			}
 			case TOKEN_IDENTIFIER: {
+				// finishing function
 				if (buildingBody) 
 				{
 					build_function_close(functions);
 					buildingBody = false;
 				}
 				
+				inList = false;
+				
 				// check if the identifier is in our function list
-				for (int i = 0; i < MAX_FUNCTIONS; i++) 
+				for (int i = 0; i < functionsCounter; i++) 
 				{
 					if (strcmp(functionList[i].name, tokens[pos].value) == 0) 
 					{
@@ -411,6 +414,7 @@ void parse_tokens(Token * tokens, FILE* functions, FILE* main, int token_count, 
 				if (!inList)
 				{
 					build_assignment(tokens, main, &pos);
+					break;
 				}
 				break;
 			}
@@ -521,7 +525,11 @@ void build_num_function(Token * tokens, FILE* fout, Function* functionList, int 
 }
 
 void build_function_call(Token * tokens, FILE* main, int * pos) {
-	;
+	while (tokens[*pos].type != TOKEN_RPAREN){
+		fprintf(main, "%s", tokens[*pos].value);
+		(*pos)++;
+	}
+	fprintf(main, ")");
 }
 
 void build_fheader(Token * tokens, FunctionType f_type, int *pos, FILE* functions, Function* functionList) {
@@ -641,13 +649,11 @@ void write_to_out(FILE* fout) {
 	char buffer[BUFSIZ];
 
 	fprintf(fout, "#include <stdio.h>\n\n");
-	while(fgets(buffer, sizeof(buffer), functions) != NULL) {
-		printf("%s\n", buffer);        
+	while(fgets(buffer, sizeof(buffer), functions) != NULL) {    
 		fprintf(fout, "%s", buffer);
 	}
 	fprintf(fout, "\n\nint main(void) {\n");
 	while(fgets(buffer, sizeof(buffer), main) != NULL) {
-		printf("%s\n", buffer);
 		fprintf(fout, "%s", buffer);
 	}
 	fprintf(fout, "return 0;\n}\n");
@@ -679,15 +685,12 @@ int main(void) {
 	// get lines sequentially
 	while (fgets(line, sizeof(line), infile) != NULL) 
 	{
-		printf("%s", line);
 		// comment check, get tokens for token array
 		if (not_comment(line)) 
 		{
 			get_line_tokens(line, tokens, &token_count);
 		}
 	}
-	
-	print_tokens(tokens, token_count);
 
 	// file pointers for our outputted c code
 	FILE* fout = fopen("out.c", "w");
@@ -697,6 +700,11 @@ int main(void) {
 	// parsing the tokens in the tokens array
 	parse_tokens(tokens, functions, main, token_count, functionList);
 	
+	printf("\nprinting functions\n\n");
+	for (int i = 0; i < functionsCounter; i++) {
+		printf("%s\n", functionList[i].name);
+	}
+
 	fclose(functions);
 	fclose(main);
 
