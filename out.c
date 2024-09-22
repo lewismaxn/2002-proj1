@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 #include <stdio.h>
 
 void random(double a, double b) {
@@ -18,3 +19,5 @@ printf("%lf\n", printout0);
 int main(void) {
 return 0;
 }
+=======
+>>>>>>> 7700726c6d9d0b2702ef160d001dcd8a2a414f00
