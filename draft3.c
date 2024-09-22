@@ -271,13 +271,8 @@ void print_tokens(Token * tokens, int token_count) {
 		printf("\n\n");
 }
 
-<<<<<<< HEAD
-void build_fheader(Token * tokens, FunctionType type, int *pos, FILE *fout);
-void build_fbody(Token * tokens, FILE* fout, int * pos);
-=======
 void build_fheader(Token * tokens, FunctionType type, int *pos, FILE *fout, Function* functionList);
 void build_fbody(Token * tokens, FILE* fout, Function* functionList, int * pos);
->>>>>>> refs/remotes/origin/main
 void build_print(Token * tokens, FILE* fout, int * pos);
 void build_assignment(Token * tokens, FILE* fout, Function * functionList, int *pos);
 void build_return(Token * tokens, FILE* fout, int * pos);
@@ -293,10 +288,7 @@ void parse_tokens(Token * tokens, FILE* functions, FILE* main, int token_count, 
 	// a marker for our position in the token array
 	int pos = 0;
 	bool buildingBody = false;
-<<<<<<< HEAD
-=======
 	
->>>>>>> refs/remotes/origin/main
 	/*
 	function will find keywords and perform translations to an output
 	file.
@@ -330,11 +322,7 @@ void parse_tokens(Token * tokens, FILE* functions, FILE* main, int token_count, 
 				FunctionType f_type;
 				f_type = check_function_type(tokens, &pos);
 				pos++;
-<<<<<<< HEAD
-				build_fheader(tokens, f_type, &pos, functions);
-=======
 				build_fheader(tokens, f_type, &pos, functions, functionList);
->>>>>>> refs/remotes/origin/main
 				break;
 			}
 			case TOKEN_INDENT: {
@@ -390,9 +378,6 @@ const FunctionType check_function_type(Token *tokens, int *pos) {
 	return VOID;
 }
 
-<<<<<<< HEAD
-void build_fheader(Token * tokens, FunctionType f_type, int *pos, FILE* fout) {
-=======
 
 void build_void_function(Token * tokens, FILE* fout, Function* functionList, int * pos) {
 	Function function;
@@ -423,8 +408,8 @@ void build_void_function(Token * tokens, FILE* fout, Function* functionList, int
 	}
 	fprintf(fout, ") {\n");
 
-	functionList[functionsCounter] = function;
-	functionsCounter++;
+	// functionList[functionsCounter] = function;
+	// functionsCounter++;
 }
 
 void build_num_function(Token * tokens, FILE* fout, Function* functionList, int * pos) {
@@ -456,14 +441,13 @@ void build_num_function(Token * tokens, FILE* fout, Function* functionList, int 
 	}
 	fprintf(fout, ") {\n");
 
-	functionList[functionsCounter] = function;
-	functionsCounter++;
+	// functionList[functionsCounter] = function;
+	// functionsCounter++;
 }
 
 
 
 void build_fheader(Token * tokens, FunctionType f_type, int *pos, FILE* functions, Function* functionList) {
->>>>>>> refs/remotes/origin/main
 	if (tokens[*pos].type != TOKEN_IDENTIFIER) {
 		fprintf(stderr, "!Trying to define function without an identifier");
 		// i want this to scan through the funtion until the last line of body and
@@ -544,19 +528,19 @@ void build_print(Token *tokens, FILE* fout, int * pos) {
 }
 
 void compiler(){
-	int result = system("cc -std=c11 -Wall -Werror -o /workspaces/2002-proj1/out /workspaces/2002-proj1/out.c");
+	int result = system("cc -std=c11 -Wall -Werror -o out out.c");
 	if (result !=0) {
-		fprintf(stderr, "Error in compilation \n");
+		fprintf(stderr, "!Error in compilation \n");
 		exit(EXIT_FAILURE);
 	}
-	system("chmod +x /workspaces/2002-proj1/out");
+	system("chmod +x out");
 	
 }
 
 void execution(){
-	int result = system("./workspaces/2002-proj1/out");
+	int result = system("./out");
 	if (result !=0) {
-		fprintf(stderr, "Error in execution \n");
+		fprintf(stderr, "!Error in execution \n");
 	}
 }
 
@@ -591,12 +575,18 @@ void write_to_out(FILE* fout) {
 	}
 	fprintf(fout, "return 0;\n}\n");
 
-	// fclose();
+	fclose(fout);
 }
 
 int main(void) {
+
+	// if (argc != 2) {
+	// 	fprintf(stderr, "Usage: %s <ml file>\n", argv[0]);
+	// 	exit(EXIT_FAILURE);
+	// }
 	// filename added for testing (mod when you want to change sources)
 	char filename[] = "program1.ml";
+	// char* filename = argv[1];
 
 	
 	// allocating a pointer to our tokens array
@@ -638,6 +628,7 @@ int main(void) {
 	
 	fclose(functions);
 	fclose(main);
+	
 
 	// free our allocated memory
 	free(tokens);
