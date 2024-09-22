@@ -307,7 +307,7 @@ void print_tokens(Token * tokens, int token_count) {
 void build_fheader(Token * tokens, FunctionType type, int *pos, FILE *fout, Function* functionList);
 void build_fbody(Token * tokens, FILE* fout, Function* functionList, int * pos);
 void build_print(Token * tokens, FILE* fout, int * pos);
-void build_assignment(Token * tokens, FILE* fout, int *pos);
+void build_assignment(Token * tokens, FILE* outfile, int *pos);
 void build_return(Token * tokens, FILE* fout, int * pos);
 const FunctionType check_function_type(Token * tokens, int * pos);
 void build_function_call(Token * tokens, FILE* main, int * pos);
@@ -317,7 +317,7 @@ void build_function_close(FILE * functions) {
 	fprintf(functions, "}\n\n");
 }
 
-void parse_tokens(Token * tokens, FILE* functions, FILE* main, int token_count, Function * functionList) {
+void parse_tokens(Token * tokens, FILE* functions, FILE* main, FILE* variables, int token_count, Function * functionList) {
 	// declaring a variable for our function type:
 	// defines if the funtion being parsed will return a value or not
 	// a marker for our position in the token array
@@ -387,6 +387,7 @@ void parse_tokens(Token * tokens, FILE* functions, FILE* main, int token_count, 
 			}
 			case TOKEN_IDENTIFIER: {
 				// finishing function
+				
 				if (buildingBody) 
 				{
 					build_function_close(functions);
@@ -519,11 +520,14 @@ void build_num_function(Token * tokens, FILE* fout, Function* functionList, int 
 }
 
 void build_function_call(Token * tokens, FILE* main, int * pos) {
-	while (tokens[*pos].type != TOKEN_RPAREN){
+	fprintf(main, "%s", tokens[*pos].value);
+		(*pos)++;
+	while (tokens[*pos].type != TOKEN_RPAREN) {
 		fprintf(main, "%s", tokens[*pos].value);
 		(*pos)++;
 	}
 	fprintf(main, ")");
+	(*pos)++;
 }
 
 void build_fheader(Token * tokens, FunctionType f_type, int *pos, FILE* functions, Function* functionList) {
@@ -578,7 +582,7 @@ void build_assignment(Token * tokens, FILE* outfile, int *pos) {
 		fprintf(outfile, "double ");
 		fprintf(outfile, "%s", tokens[*pos].value);
 		fprintf(outfile, " = ");
-		// skipping over the assignment and identifier char
+		// skipping over the assignment and identifier tokens
 		*pos += 2;
 		while (tokens[*pos].type != TOKEN_END) {
 			fprintf(outfile, "%s", tokens[*pos].value);
@@ -589,8 +593,14 @@ void build_assignment(Token * tokens, FILE* outfile, int *pos) {
 }
 
 void build_print(Token *tokens, FILE* fout, int * pos) {
-	// assigning a variable 
 	(*pos)++;
+
+	// ERROR FOR CHECKER
+
+	if (tokens[*pos].type == TOKEN_END) {
+		fprintf(stderr, "!Print statement with no expression");
+		exit(EXIT_FAILURE);
+	}
 
 	fprintf(fout, "double printout%d =", printCounter);
 	while (tokens[*pos].type != TOKEN_END) {
@@ -630,6 +640,7 @@ void remove_files(void) {
 }
 
 void write_to_out(FILE* fout) {
+	FILE* variables = fopen("variables.c", "w");
 	FILE* functions = fopen("functions.c", "r");
 	FILE* main = fopen("main.c", "r");
 	
@@ -643,6 +654,9 @@ void write_to_out(FILE* fout) {
 	char buffer[BUFSIZ];
 
 	fprintf(fout, "#include <stdio.h>\n\n");
+	while(fgets(buffer, sizeof(buffer), variables) != NULL) {
+		fprintf(fout, "%s", buffer);
+	}
 	while(fgets(buffer, sizeof(buffer), functions) != NULL) {    
 		fprintf(fout, "%s", buffer);
 	}
@@ -657,7 +671,7 @@ void write_to_out(FILE* fout) {
 
 int main(void) {
 	// filename added for testing (mod when you want to change sources)
-	char filename[] = "program1.ml";
+	char filename[] = "example.ml";
 
 	
 	// allocating a pointer to our tokens array
@@ -688,17 +702,19 @@ int main(void) {
 
 	// file pointers for our outputted c code
 	FILE* fout = fopen("out.c", "w");
+	FILE* variables = fopen("variables.c", "w");
 	FILE* functions = fopen("functions.c", "w");
 	FILE* main = fopen("main.c", "w");
 
 	// parsing the tokens in the tokens array
-	parse_tokens(tokens, functions, main, token_count, functionList);
+	parse_tokens(tokens, functions, main, variables, token_count, functionList);
 	
 	printf("\nprinting functions\n\n");
 	for (int i = 0; i < functionsCounter; i++) {
 		printf("%s\n", functionList[i].name);
 	}
 
+	fclose(variables);
 	fclose(functions);
 	fclose(main);
 
@@ -708,7 +724,7 @@ int main(void) {
 	// opening the 
 	write_to_out(fout);
 
-	compiler();
-	execution();
-    remove_files();
+	// compiler();
+	// execution();
+    // remove_files();
 }

@@ -104,3 +104,7 @@ else {
 }
 
 thats how prints should work?
+
+
+
+issue with single function call statements
