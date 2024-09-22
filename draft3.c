@@ -145,27 +145,21 @@ Token get_next_token(char* line, int* pos) {
 			(*pos)++;
 			return token;
 	}
-	//returning token to avoid reassignment later
-	
-	
+	//Here we are returning the token to avoid reassignment later 
 	// Skip whitespace
-	// will just move pos along until a char is found
+	// We will just move pos along until a char is found
 	while (isspace(line[*pos])) (*pos)++;  
 
 
-	// checking for alphanumeric tokens (identifiers and keywords)
+	// Here we are checking for alphanumeric tokens (identifiers and keywords)
 	if (isalpha(line[*pos])) {
-		// identify the start position of the token string
+		// We are identifying the start position of the token string
 		int start = *pos;
-		// iterate as long as we have an alphanumeric char
-		// this will give us a postion along the array
+		// It's going to iterate as long as we have an alphanumeric char
+		// This will give us a position along the array
 		while (isalnum(line[*pos])) (*pos)++;        
-		// copy string from start to pos into token.value
+		// Here we are copying the string from start to pos into token.value
 		
-		/*
-		copying from the start address for pos - start bytes
-		*/
-
 		strncpy(token.value, &line[start], *pos - start);
 		// add the exit char when at the final position in the string
 		token.value[*pos - start] = '\0';
@@ -228,7 +222,7 @@ Token get_next_token(char* line, int* pos) {
 	}
 
 
-	// TOKEN_OPPERATOR
+	// TOKEN_OPERATOR
 
 	// check for an operator and copy into token.value
 	else if (line[*pos] == '+' || line[*pos] == '-' || line[*pos] == '*' || line[*pos] == '/') { 
@@ -708,5 +702,5 @@ int main(void) {
 
 	compiler();
 	execution();
-    // remove_files();
+    remove_files();
 }
