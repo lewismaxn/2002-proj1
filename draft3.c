@@ -327,11 +327,17 @@ void parse_tokens(Token * tokens, FILE* functions, FILE* main, int token_count, 
 	// defines if the funtion being parsed will return a value or not
 	// a marker for our position in the token array
 	int pos = 0;
-	bool buildingBody = false;
-<<<<<<< HEAD
-=======
 	
->>>>>>> refs/remotes/origin/main
+	/*
+	when we build the body of a function we need to know so that we can
+	terminate it with a curly brace one we have finished with the build
+	*/
+	bool buildingBody = false; // true when building body
+	
+	// 
+	bool inList = false;
+
+
 	/*
 	function will find keywords and perform translations to an output
 	file.
@@ -476,8 +482,8 @@ void build_void_function(Token * tokens, FILE* fout, Function* functionList, int
 	}
 	fprintf(fout, ") {\n");
 
-	// functionList[functionsCounter] = function;
-	// functionsCounter++;
+	functionList[functionsCounter] = function;
+	functionsCounter++;
 }
 
 void build_num_function(Token * tokens, FILE* fout, Function* functionList, int * pos) {
@@ -509,8 +515,8 @@ void build_num_function(Token * tokens, FILE* fout, Function* functionList, int 
 	}
 	fprintf(fout, ") {\n");
 
-	// functionList[functionsCounter] = function;
-	// functionsCounter++;
+	functionList[functionsCounter] = function;
+	functionsCounter++;
 }
 
 void build_function_call(Token * tokens, FILE* main, int * pos) {
@@ -601,17 +607,16 @@ void build_print(Token *tokens, FILE* fout, int * pos) {
 void compiler(){
 	int result = system("cc -std=c11 -Wall -Werror -o out out.c");
 	if (result !=0) {
-		fprintf(stderr, "!Error in compilation \n");
+		fprintf(stderr, "Error in compilation \n");
 		exit(EXIT_FAILURE);
 	}
-	system("chmod +x out");
-	
+	system("chmod +x ${fileDirname}/out");
 }
 
 void execution(){
 	int result = system("./out");
 	if (result !=0) {
-		fprintf(stderr, "!Error in execution \n");
+		fprintf(stderr, "Error in execution \n");
 	}
 }
 
@@ -650,14 +655,8 @@ void write_to_out(FILE* fout) {
 }
 
 int main(void) {
-
-	// if (argc != 2) {
-	// 	fprintf(stderr, "Usage: %s <ml file>\n", argv[0]);
-	// 	exit(EXIT_FAILURE);
-	// }
 	// filename added for testing (mod when you want to change sources)
 	char filename[] = "program1.ml";
-	// char* filename = argv[1];
 
 	
 	// allocating a pointer to our tokens array
@@ -699,7 +698,6 @@ int main(void) {
 	
 	fclose(functions);
 	fclose(main);
-	
 
 	// free our allocated memory
 	free(tokens);
