@@ -11,6 +11,7 @@
 
 // variable 
 static int printCounter = 0;
+static int functionsCounter = 0;
 
 typedef enum {
 	/*
@@ -266,21 +267,24 @@ void print_tokens(Token * tokens, int token_count) {
 		printf("\n\n");
 }
 
-void build_fheader(Token * tokens, FunctionType type, int *pos, FILE *fout);
-void build_fbody(Token * tokens, FILE* fout, int * pos, bool * isfunctionbody);
+void build_fheader(Token * tokens, FunctionType type, int *pos, FILE *fout, char *functionList);
+void build_fbody(Token * tokens, FILE* fout, int * pos);
 void build_print(Token * tokens, FILE* fout, int * pos);
 void build_assignment(Token * tokens, FILE* fout, int *pos);
 void build_return(Token * tokens, FILE* fout, int * pos);
 const FunctionType check_function_type(Token * tokens, int * pos);
+
+void build_function_close(FILE * functions) {
+	fprintf(functions, "}\n\n");
+}
 
 void parse_tokens(Token * tokens, FILE* functions, FILE* main, int token_count) {
 	// declaring a variable for our function type:
 	// defines if the funtion being parsed will return a value or not
 	// a marker for our position in the token array
 	int pos = 0;
-	bool isfunctionbody = false;
-
-
+	bool buildingBody = false;
+	char functionList[50][12];
 	/*
 	function will find keywords and perform translations to an output
 	file.
@@ -307,53 +311,48 @@ void parse_tokens(Token * tokens, FILE* functions, FILE* main, int token_count) 
 				break;
 			}
 			case TOKEN_FUNCTION: {
-				if (isfunctionbody){
-					fprintf(functions, "}\n");
-					isfunctionbody = false;
+					if (buildingBody) {
+				build_function_close(functions);
+				buildingBody = false;
 				}
 				FunctionType f_type;
 				f_type = check_function_type(tokens, &pos);
 				pos++;
-				printf("state = %d", f_type);
-				build_fheader(tokens, f_type, &pos, functions);
-				isfunctionbody = true;
+				build_fheader(tokens, f_type, &pos, functions, &functionList);
 				break;
 			}
 			case TOKEN_INDENT: {
 				// if ident is found, go to next token and build
 				// a line in the function
 				pos++;
-				build_fbody(tokens, functions, &pos, &isfunctionbody);                        
+				buildingBody = true;
+				build_fbody(tokens, functions, &pos);
 				break;
 			}
 			case TOKEN_IDENTIFIER: {
-				if (isfunctionbody){
-					build_assignment(tokens, functions, &pos);
+					if (buildingBody) {
+				build_function_close(functions);
+				buildingBody = false;
 				}
-				else {
-					build_assignment(tokens, main, &pos);
-				}
+				
+
+				build_assignment(tokens, main, &pos);
 				break;
 			}
 			case TOKEN_PRINT: {
-				if (isfunctionbody){
-					build_print(tokens, functions, &pos);
-				}
-				else{
-					build_print(tokens, main, &pos);
-					
+				if (buildingBody) 
+				{
+				build_function_close(functions);
+				buildingBody = false;
 				}
 				pos++;
+				build_print(tokens, main, &pos);
 				break;
 			}
 			default: {
 				break;
 			}
 		}
-	}
-	if (isfunctionbody && tokens[pos].type != TOKEN_INDENT && tokens[pos].type != TOKEN_RETURN && tokens[pos].type != TOKEN_FUNCTION){
-		fprintf(functions, "}\n");
-		isfunctionbody = false;
 	}
 }
 
@@ -377,7 +376,7 @@ const FunctionType check_function_type(Token *tokens, int *pos) {
 	return VOID;
 }
 
-void build_fheader(Token * tokens, FunctionType f_type, int *pos, FILE* fout) {
+void build_fheader(Token * tokens, FunctionType f_type, int *pos, FILE* fout, char * functionList) {
 	if (tokens[*pos].type != TOKEN_IDENTIFIER) {
 		fprintf(stderr, "!Trying to define function without an identifier");
 		// i want this to scan through the funtion until the last line of body and
@@ -425,20 +424,16 @@ void build_fheader(Token * tokens, FunctionType f_type, int *pos, FILE* fout) {
 	}
 }
 
-void build_fbody(Token * tokens, FILE* functions, int * pos, bool * isfunctionbody) {
-	while (tokens[*pos].type == TOKEN_INDENT){
-		if (tokens[*pos].type == TOKEN_PRINT) {
-			build_print(tokens, functions, pos);
-		}
-		if (tokens[*pos].type == TOKEN_RETURN) {
-			build_return(tokens, functions, pos);
-		}
-		if (tokens[*pos].type == TOKEN_IDENTIFIER) {
-			build_assignment(tokens, functions, pos);
-		}
-		(*pos)++;
+void build_fbody(Token * tokens, FILE* functions, int * pos) {
+	if (tokens[*pos].type == TOKEN_PRINT) {
+		build_print(tokens, functions, pos);
 	}
-	
+	if (tokens[*pos].type == TOKEN_RETURN) {
+		build_return(tokens, functions, pos);
+	}
+	if (tokens[*pos].type == TOKEN_IDENTIFIER) {
+		build_assignment(tokens, functions, pos);
+	}	
 }
 
 void build_return(Token * tokens, FILE* fout, int * pos) {
@@ -589,5 +584,5 @@ int main(void) {
 
 	compiler();
 	execution();
-   remove_files();
+    remove_files();
 }
