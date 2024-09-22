@@ -1,30 +1,17 @@
 #include <stdio.h>
 
+void a(double b) {
+double a = 15;
+double e = 20;
+}
+void d(double c) {
+double d = 11;
+double k = 2;
+}
 
 
 int main(void) {
 double x = 10;
 double y = 20;
-double printout0 = x;
-if ((printout0 - (int)printout0) == 0) {
-printf("%d\n", (int)printout0);
-}
-else {
-printf("%lf\n", printout0);
-}
-double printout1 = y;
-if ((printout1 - (int)printout1) == 0) {
-printf("%d\n", (int)printout1);
-}
-else {
-printf("%lf\n", printout1);
-}
-double printout2 = ( x + y );
-if ((printout2 - (int)printout2) == 0) {
-printf("%d\n", (int)printout2);
-}
-else {
-printf("%lf\n", printout2);
-}
 return 0;
 }

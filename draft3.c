@@ -277,7 +277,7 @@ void parse_tokens(Token * tokens, FILE* functions, FILE* main, int token_count) 
     // defines if the funtion being parsed will return a value or not
     // a marker for our position in the token array
     int pos = 0;
-    
+    bool isfunctionbody = false;
 
 
     /*
@@ -306,31 +306,53 @@ void parse_tokens(Token * tokens, FILE* functions, FILE* main, int token_count) 
                 break;
             }
             case TOKEN_FUNCTION: {
+                if (isfunctionbody){
+                    fprintf(functions, "}\n");
+                    isfunctionbody = false;
+                }
                 FunctionType f_type;
                 f_type = check_function_type(tokens, &pos);
                 pos++;
                 printf("state = %d", f_type);
                 build_fheader(tokens, f_type, &pos, functions);
+                isfunctionbody = true;
                 break;
             }
             case TOKEN_INDENT: {
-                pos++;
-                build_fbody(tokens, functions, &pos);
+                if (isfunctionbody){
+                    pos++;
+                    build_fbody(tokens, functions, &pos);                        
+                }
                 break;
             }
             case TOKEN_IDENTIFIER: {
-                build_assignment(tokens, main, &pos);
+                if (isfunctionbody){
+                    build_assignment(tokens, functions, &pos);
+                }
+                else {
+                    build_assignment(tokens, main, &pos);
+                }
                 break;
             }
             case TOKEN_PRINT: {
+                if (isfunctionbody){
+                    build_print(tokens, functions, &pos);
+                }
+                else{
+                    build_print(tokens, main, &pos);
+                    
+                }
                 pos++;
-                build_print(tokens, main, &pos);
                 break;
             }
             default: {
                 break;
             }
         }
+    }
+    if (isfunctionbody && tokens[pos].type != TOKEN_INDENT && tokens[pos].type != TOKEN_RETURN && tokens[pos].type != TOKEN_FUNCTION){
+        fprintf(functions, "}\n");
+        isfunctionbody = false;
     }
 }
 
@@ -403,15 +425,19 @@ void build_fheader(Token * tokens, FunctionType f_type, int *pos, FILE* fout) {
 }
 
 void build_fbody(Token * tokens, FILE* functions, int * pos) {
-    if (tokens[*pos].type == TOKEN_PRINT) {
-        build_print(tokens, functions, pos);
+    while (tokens[*pos].type == TOKEN_INDENT){
+        if (tokens[*pos].type == TOKEN_PRINT) {
+            build_print(tokens, functions, pos);
+        }
+        if (tokens[*pos].type == TOKEN_RETURN) {
+            build_return(tokens, functions, pos);
+        }
+        if (tokens[*pos].type == TOKEN_IDENTIFIER) {
+            build_assignment(tokens, functions, pos);
+        }
+        (*pos)++;
     }
-    if (tokens[*pos].type == TOKEN_RETURN) {
-        build_return(tokens, functions, pos);
-    }
-    if (tokens[*pos].type == TOKEN_IDENTIFIER) {
-        build_assignment(tokens, functions, pos);
-    }
+    
 }
 
 void build_return(Token * tokens, FILE* fout, int * pos) {
@@ -456,11 +482,21 @@ void build_print(Token *tokens, FILE* fout, int * pos) {
 }
 
 void compiler(){
-    system("cc -std=c11 -o out out.c");
+    int result = system("cc -std=c11 -o out out.c");
+    system("chmod +x out");
+    if (result !=0) {
+        fprintf(stderr, "Error in compilation \n");
+        exit(EXIT_FAILURE);
+    }
+    
 }
 
 void execution(){
+    int result = system("./out");
     system("./out");
+    if (result !=0) {
+        fprintf(stderr, "Error in execution \n");
+    }
 }
 
 void remove_files(void) {
@@ -492,9 +528,9 @@ void write_to_out(FILE* fout) {
         printf("%s\n", buffer);
         fprintf(fout, "%s", buffer);
     }
-    fprintf(fout, "return 0;\n}");
+    fprintf(fout, "return 0;\n}\n");
 
-    //fclose();
+    // fclose();
 }
 
 int main(void) {
