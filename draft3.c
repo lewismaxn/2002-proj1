@@ -401,7 +401,7 @@ void parse_tokens(Token * tokens, FILE* functions, FILE* main, int token_count, 
 				// check if the identifier is in our function list
 				for (int i = 0; i < MAX_FUNCTIONS; i++) 
 				{
-					if (strcmp(functionList[i].name, tokens[pos].value)) 
+					if (strcmp(functionList[i].name, tokens[pos].value) == 0) 
 					{
 						build_function_call(tokens, main, &pos);
 						inList = true;
